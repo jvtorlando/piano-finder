@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
+    <meta name="description" content="Encontre pianos públicos para tocar em todo o Brasil. Cultura e música ao alcance de todos.">
+    <meta property="og:title" content="Piano Finder — Pianos Públicos no Brasil">
+    <meta property="og:description" content="Encontre pianos públicos para tocar em todo o Brasil.">
+    <meta property="og:image" content="https://res.cloudinary.com/SEU_CLOUD/image/upload/SUA_IMAGEM_CAPA.jpg">
+    <meta property="og:url" content="https://seudominio.com">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+        <meta charset="UTF-8">
+    {% load static %}
+    <link rel="icon" type="image/png" href="{% static 'favicon.ico' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Piano Finder — Pianos Públicos no Brasil</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -317,6 +326,51 @@
             .feed { grid-template-columns: repeat(3, 1fr); }
             .card-img-wrap { height: 260px; }
         }
+        /* ── SCROLL ANIMATIONS ── */
+        .card {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.55s ease, transform 0.55s ease;
+        }
+        .card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── PAGE TRANSITION ── */
+        body { transition: opacity 0.25s ease; }
+        body.fade-out { opacity: 0; }
+
+        /* ── NAV SCROLL SHADOW ── */
+        .mobile-nav {
+            transition: box-shadow 0.3s ease, background 0.3s ease;
+        }
+        .mobile-nav.scrolled {
+            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+            background: rgba(13,13,13,1);
+        }
+
+        /* ── HERO KEYS STAGGER ── */
+        .keys-strip .key {
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .keys-strip.visible .key {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── FEED LABEL BAR ── */
+        .feed-label-bar {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease 0.1s, transform 0.4s ease 0.1s;
+        }
+        .feed-label-bar.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
     </style>
 </head>
 <body>
@@ -460,7 +514,7 @@
 </div>
 
 <a href="{% url 'adicionar_piano' %}" class="fab" aria-label="Adicionar piano">＋</a>
-<footer>Piano Finder — Cultura, Musical e Lazer ao alcance de todos · By João Orlando</footer>
+<footer>Piano Finder — Cultura, Musical e Lazer ao alcance de todos · By João Orlando <br>© 2025 Piano Finder</footer>
 
 <!-- OVERLAY -->
 <div class="filter-overlay" id="filterOverlay"></div>
@@ -527,8 +581,22 @@ const popup     = document.getElementById('filterPopup');
 const filterBtn = document.getElementById('filterBtn');
 const closeBtn  = document.getElementById('filterClose');
 
-function openFilter()  { overlay.classList.add('open'); popup.classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closeFilter() { overlay.classList.remove('open'); popup.classList.remove('open'); document.body.style.overflow = ''; }
+function openFilter() {
+    if (window.innerWidth >= 600) {
+        const rect = filterBtn.getBoundingClientRect();
+        popup.style.top = (rect.bottom + 8) + 'px';
+        popup.style.left = rect.left + 'px';
+        popup.style.transform = 'none';
+    }
+    overlay.classList.add('open');
+    popup.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeFilter() {
+    overlay.classList.remove('open');
+    popup.classList.remove('open');
+    document.body.style.overflow = '';
+}
 filterBtn.addEventListener('click', openFilter);
 overlay.addEventListener('click', closeFilter);
 closeBtn.addEventListener('click', closeFilter);
@@ -587,6 +655,80 @@ document.querySelectorAll('.card-img-wrap').forEach(wrap => {
     wrap.addEventListener('mouseleave', () => { timer = setInterval(() => goTo(current + 1), 4000); });
 });
 </script>
+<script>
+// ── SCROLL: CARDS ──
+const cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+            // pequeno delay escalonado por posição na grid
+            const delay = (entry.target.dataset.idx % 3) * 80;
+            setTimeout(() => entry.target.classList.add('visible'), delay);
+            cardObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.08 });
 
+document.querySelectorAll('.card').forEach((card, i) => {
+    card.dataset.idx = i;
+    cardObserver.observe(card);
+});
+
+// ── SCROLL: HERO KEYS STAGGER ──
+const keysStrip = document.querySelector('.keys-strip');
+if (keysStrip) {
+    keysStrip.classList.add('visible'); // já visível no topo
+    keysStrip.querySelectorAll('.key').forEach((key, i) => {
+        key.style.transitionDelay = (i * 45) + 'ms';
+    });
+    // força reflow para a transition disparar
+    requestAnimationFrame(() => {
+        keysStrip.querySelectorAll('.key').forEach(key => {
+            key.style.opacity = '1';
+            key.style.transform = 'translateY(0)';
+        });
+    });
+}
+
+// ── SCROLL: FEED LABEL BAR ──
+const labelBar = document.querySelector('.feed-label-bar');
+if (labelBar) {
+    const barObs = new IntersectionObserver(([e]) => {
+        if (e.isIntersecting) { labelBar.classList.add('visible'); barObs.disconnect(); }
+    }, { threshold: 0.1 });
+    barObs.observe(labelBar);
+}
+
+// ── NAV SHADOW NO SCROLL ──
+const mobileNav = document.querySelector('.mobile-nav');
+if (mobileNav) {
+    window.addEventListener('scroll', () => {
+        mobileNav.classList.toggle('scrolled', window.scrollY > 20);
+    }, { passive: true });
+}
+
+// ── PAGE TRANSITION (saída suave) ──
+document.querySelectorAll('a[href]').forEach(link => {
+    if (link.hostname !== location.hostname) return;
+    if (link.getAttribute('href').startsWith('#')) return;
+    if (link.target === '_blank') return;
+    link.addEventListener('click', e => {
+        e.preventDefault();
+        const href = link.href;
+        document.body.classList.add('fade-out');
+        setTimeout(() => window.location.href = href, 230);
+    });
+});
+
+// Entrada suave ao carregar
+document.body.style.opacity = '0';
+window.addEventListener('DOMContentLoaded', () => {
+    requestAnimationFrame(() => {
+        document.body.style.opacity = '';
+    });
+});
+window.addEventListener('pageshow', () => {
+    document.body.classList.remove('fade-out');
+});
+</script>
 </body>
 </html>

@@ -6,6 +6,7 @@ from .models import Piano, Comentario
 from .forms import PianoForm, ComentarioForm
 import cloudinary.uploader
 
+
 ESTADOS = [
     ('AC','Acre'), ('AL','Alagoas'), ('AP','Amapá'), ('AM','Amazonas'),
     ('BA','Bahia'), ('CE','Ceará'), ('DF','Distrito Federal'), ('ES','Espírito Santo'),
@@ -67,6 +68,7 @@ def adicionar_piano(request):
     else:
         form = PianoForm()
     return render(request, 'pianos/adicionar.html', {'form': form})
+
 
 
 def detalhe_piano(request, piano_id):

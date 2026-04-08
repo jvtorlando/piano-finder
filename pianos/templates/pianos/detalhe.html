@@ -1,7 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <meta property="og:title" content="{{ piano.nome_local }} — Piano Finder">
+    <meta property="og:description" content="{{ piano.cidade }}, {{ piano.estado }}{% if piano.descricao %} — {{ piano.descricao|truncatechars:100 }}{% else %} — Piano público disponível para tocar.{% endif %}">
+    <meta property="og:image" content="{% if piano.foto_url %}{{ piano.foto_url }}{% endif %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
     <meta charset="UTF-8">
+    {% load static %}
+    <link rel="icon" type="image/png" href="{% static 'favicon.ico' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ piano.nome_local }} — Piano Finder</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -533,6 +541,80 @@
     function var_gold() { return '#c9a84c'; }
 })();
 </script>
+<style>
+/* ── DETALHE: SCROLL ANIMATIONS ── */
+body { transition: opacity 0.25s ease; }
+body.fade-out { opacity: 0; }
 
+.action-bar,
+.stars-bar,
+.info-pills,
+.descricao-block,
+.section-title,
+.comentario,
+.form-comentario {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.anim-visible {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+/* Teclas hero sobem suavemente */
+nav {
+    animation: slideDown 0.5s ease both;
+}
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<script>
+// ── SCROLL: ELEMENTOS DO DETALHE ──
+const detalheObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('anim-visible');
+            detalheObs.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.07 });
+
+document.querySelectorAll(
+    '.action-bar, .stars-bar, .info-pills, .descricao-block, .section-title, .comentario, .form-comentario'
+).forEach((el, i) => {
+    el.style.transitionDelay = (i * 60) + 'ms';
+    detalheObs.observe(el);
+});
+
+// ── PAGE TRANSITION ──
+document.querySelectorAll('a[href]').forEach(link => {
+    if (link.hostname !== location.hostname) return;
+    if (link.getAttribute('href').startsWith('#')) return;
+    if (link.target === '_blank') return;
+    link.addEventListener('click', e => {
+        e.preventDefault();
+        const href = link.href;
+        document.body.classList.add('fade-out');
+        setTimeout(() => window.location.href = href, 230);
+    });
+});
+
+// ── PAGE TRANSITION ──
+window.addEventListener('pageshow', () => {
+    document.body.style.transition = 'none';
+    document.body.style.opacity = '1';
+    document.body.classList.remove('fade-out');
+    requestAnimationFrame(() => {
+        document.body.style.transition = '';
+    });
+});
+window.addEventListener('pageshow', () => {
+    document.body.classList.remove('fade-out');
+});
+</script>
 </body>
 </html>

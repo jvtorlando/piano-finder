@@ -2,6 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    {% load static %}
+    <link rel="icon" type="image/png" href="{% static 'favicon.ico' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adicionar Piano — Piano Finder</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,7 +40,7 @@
             display: flex; flex-direction: column;
         }
 
-        .form-eyebrow { font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
+        .<form>-eyebrow { font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
         .form-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--ivory); margin-bottom: 0.4rem; line-height: 1.1; }
         .form-title em { font-style: italic; color: var(--gold); }
         .form-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 2rem; }
@@ -272,25 +274,33 @@
 
         <form method="POST" enctype="multipart/form-data" id="mainForm" autocomplete="off">
             {% csrf_token %}
+            <!-- honeypot: engana o autocomplete do browser -->
+            <input type="text" name="_fake_user" style="display:none" tabindex="-1" autocomplete="username">
+            <input type="password" name="_fake_pass" style="display:none" tabindex="-1" autocomplete="new-password">
+            
 
-            <div class="field">
+                        <div class="field">
                 <label>Nome do local</label>
-                {{ form.nome_local }}
+                <input type="text" id="vis_nome_local" autocomplete="off-a1" placeholder="Ex: Livraria Cultura">
+                <input type="hidden" name="nome_local" id="real_nome_local">
             </div>
 
             <div class="field">
                 <label>Endereço</label>
-                {{ form.endereco }}
+                <input type="text" id="vis_endereco" autocomplete="off-b2" placeholder="Ex: Av. Paulista, 2073">
+                <input type="hidden" name="endereco" id="real_endereco">
             </div>
 
             <div class="field-row">
                 <div class="field">
                     <label>Cidade</label>
-                    {{ form.cidade }}
+                    <input type="text" id="vis_cidade" autocomplete="off-c3" placeholder="Ex: São Paulo">
+                    <input type="hidden" name="cidade" id="real_cidade">
                 </div>
                 <div class="field">
                     <label>Estado</label>
-                    {{ form.estado }}
+                    <input type="text" id="vis_estado" autocomplete="off-d4" placeholder="Ex: SP" maxlength="2">
+                    <input type="hidden" name="estado" id="real_estado">
                 </div>
             </div>
 
@@ -525,12 +535,105 @@ document.getElementById('mainForm').addEventListener('submit', () => {
 });
 
 // ── SEM SUGESTÕES ──
-document.querySelectorAll('input:not([type=file]):not([type=radio]):not([type=checkbox]), textarea').forEach(el => {
-    el.setAttribute('autocomplete', 'new-password');
-    el.setAttribute('readonly', true);
-    el.addEventListener('focus', () => el.removeAttribute('readonly'));
+const camposVisiveis = [
+    { vis: 'vis_nome_local', real: 'real_nome_local' },
+    { vis: 'vis_endereco',   real: 'real_endereco'   },
+    { vis: 'vis_cidade',     real: 'real_cidade'     },
+    { vis: 'vis_estado',     real: 'real_estado'     },
+];
+camposVisiveis.forEach(({ vis, real }) => {
+    const input = document.getElementById(vis);
+    if (!input) return;
+    input.setAttribute('autocomplete', 'off-' + Math.random().toString(36).slice(2,8));
+    input.addEventListener('input', () => {
+        document.getElementById(real).value = input.value;
+    });
+});
+
+// Copia tudo antes de enviar (garantia)
+document.getElementById('mainForm').addEventListener('submit', () => {
+    camposVisiveis.forEach(({ vis, real }) => {
+        const input = document.getElementById(vis);
+        if (input) document.getElementById(real).value = input.value;
+    });
 });
 </script>
+<style>
+body { transition: opacity 0.25s ease; }
+body.fade-out { opacity: 0; }
 
+.field, .field-row, .field-check,
+.section-divider, .tipo-cat-grid,
+.tipo-sub-wrap, .dropzone,
+.btn-escolher-arquivo, .btn-row {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.anim-visible {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+}
+
+/* Piano keys no painel esquerdo */
+.vk {
+    opacity: 0;
+    transform: translateY(-18px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+</style>
+
+<script>
+// ── PIANO KEYS STAGGER ──
+document.querySelectorAll('.vk').forEach((key, i) => {
+    setTimeout(() => {
+        key.style.opacity = '1';
+        key.style.transform = 'translateY(0)';
+    }, 100 + i * 55);
+});
+
+// ── FORM FIELDS SCROLL ──
+const formObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('anim-visible');
+            formObs.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.05 });
+
+document.querySelectorAll(
+    '.field, .field-row, .field-check, .section-divider, .tipo-cat-grid, .tipo-sub-wrap, .dropzone, .btn-escolher-arquivo, .btn-row'
+).forEach((el, i) => {
+    el.style.transitionDelay = (i * 50) + 'ms';
+    formObs.observe(el);
+});
+
+// ── PAGE TRANSITION ──
+document.querySelectorAll('a[href]').forEach(link => {
+    if (link.hostname !== location.hostname) return;
+    if (link.getAttribute('href').startsWith('#')) return;
+    if (link.target === '_blank') return;
+    link.addEventListener('click', e => {
+        e.preventDefault();
+        const href = link.href;
+        document.body.classList.add('fade-out');
+        setTimeout(() => window.location.href = href, 230);
+    });
+});
+
+// ── PAGE TRANSITION ──
+window.addEventListener('pageshow', () => {
+    document.body.style.transition = 'none';
+    document.body.style.opacity = '1';
+    document.body.classList.remove('fade-out');
+    requestAnimationFrame(() => {
+        document.body.style.transition = '';
+    });
+});
+window.addEventListener('pageshow', () => {
+    document.body.classList.remove('fade-out');
+});
+</script>
 </body>
 </html>

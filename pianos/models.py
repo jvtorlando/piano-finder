@@ -36,11 +36,11 @@ class Piano(models.Model):
     def __str__(self):
         return f"{self.nome_local} - {self.cidade}/{self.estado}"
 
+    @property                              # ← dentro da classe, com indentação
     def fotos(self):
         return [f for f in [self.foto_url, self.foto_url_2, self.foto_url_3] if f]
 
     def estrelas_display(self):
-        """Retorna estrelas arredondadas para 0.5"""
         return round(self.estrelas * 2) / 2
 
 

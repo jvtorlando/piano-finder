@@ -8,7 +8,7 @@ class PianoForm(forms.ModelForm):
 
     class Meta:
         model = Piano
-        fields = ['nome_local', 'endereco', 'cidade', 'estado', 'esta_funcionando', 'descricao']
+        fields = ['nome_local', 'endereco', 'cidade', 'estado', 'esta_funcionando', 'descricao', 'tipo']  # ← tipo adicionado aqui
         widgets = {
             'nome_local': forms.TextInput(attrs={
                 'autocomplete': 'new-password',
