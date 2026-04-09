@@ -205,7 +205,10 @@
         }
         .card:active { opacity: 0.85; }
         .card-img-wrap {
-            width: 100%; height: 52vw; min-height: 180px; max-height: 280px;
+            width: 100%;
+            height: 56vw;
+            min-height: 200px;
+            max-height: 280px;
             overflow: hidden; background: #111; position: relative;
         }
         .carousel-track { display: flex; height: 100%; transition: transform 0.35s ease; will-change: transform; }
@@ -526,6 +529,7 @@
     </div>
     {% endfor %}
 </div>
+
 
 <a href="{% url 'adicionar_piano' %}" class="fab" aria-label="Adicionar piano">＋</a>
 <footer>Piano Finder — Cultura, Musical e Lazer ao alcance de todos · By João Orlando <br>© 2025 Piano Finder</footer>
