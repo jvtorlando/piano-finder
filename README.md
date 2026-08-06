@@ -3,8 +3,9 @@
 A community-driven platform for locating, rating, and documenting publicly accessible pianos across Brazil.
 
 [![Tests](https://github.com/jvtorlando/piano-finder/actions/workflows/tests.yml/badge.svg)](https://github.com/jvtorlando/piano-finder/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/jvtorlando/piano-finder)](https://github.com/jvtorlando/piano-finder/releases)
 
-[Live application](https://www.pianofinder.com.br/) · [GitHub repository](https://github.com/jvtorlando/piano-finder)
+[Live application](https://www.pianofinder.com.br/) · [Releases](https://github.com/jvtorlando/piano-finder/releases) · [Changelog](CHANGELOG.md) · [GitHub repository](https://github.com/jvtorlando/piano-finder)
 
 ## About the project
 
@@ -45,13 +46,15 @@ Piano Finder first grew as a TikTok project documenting public pianos. The respo
 - public catalog that displays approved pianos only;
 - filtering by Brazilian state, city, and piano type;
 - community submissions with up to three images;
+- responsive 16:10 image editor with drag, zoom, keyboard, and touch controls;
+- normalized 1600×1000 image output for consistent catalog cards on every screen size;
 - image storage and delivery through Cloudinary;
 - detail pages with address, availability, description, and Google Maps access;
 - likes, dislikes, and one-to-five-star ratings;
 - comments subject to moderation;
 - automatic selection of the three most-liked pianos as featured locations;
 - Django Admin interface for searching, reviewing, and moderating submissions;
-- responsive interface for desktop and mobile devices.
+- edge-to-edge mobile image framing without changing the desktop and tablet presentation.
 
 ## Architecture
 
@@ -89,7 +92,11 @@ PostgreSQL keeps production data outside Vercel's ephemeral runtime. The connect
 
 ### Cloudinary
 
-Images do not depend on the application's local filesystem. Public submissions upload directly to Cloudinary and Django accepts only HTTPS image URLs belonging to the configured Piano Finder cloud. Admin uploads are validated server-side before they are sent to the same service.
+Images do not depend on the application's local filesystem. Public submissions upload directly to Cloudinary and Django accepts only HTTPS image URLs belonging to the configured Piano Finder cloud. Admin uploads are also validated server-side before they are sent to the same service.
+
+### Consistent image framing
+
+A reusable browser-based editor previews the fixed 16:10 catalog frame before upload and exports a 1600×1000 JPEG through the Canvas API. It supports pointer, touch, keyboard, zoom, reset, and cancellation controls in both the public form and Django Admin. Mobile cards and detail pages fill the same frame edge to edge, while the established tablet and desktop layouts remain unchanged.
 
 ### Moderation workflow
 
@@ -109,7 +116,7 @@ Piano submissions, comments, votes, and ratings have IP-based request limits. Th
 | --- | --- |
 | Backend | Python 3.14, Django 6 |
 | Database | PostgreSQL, Neon, SQLite |
-| Frontend | HTML, CSS, JavaScript |
+| Frontend | HTML, CSS, JavaScript, Canvas API |
 | Images | Cloudinary |
 | Infrastructure | Vercel, Hostinger DNS, Neon, Cloudinary, WhiteNoise |
 | Quality | Django TestCase, GitHub Actions, migrations, Git, GitHub |
@@ -122,6 +129,7 @@ The suite covers the main user flows and business rules, including:
 - catalog filters;
 - Brazilian state, piano type, and Cloudinary URL validation;
 - public and admin image-upload behavior;
+- image-editor integration and mobile image framing;
 - comment moderation;
 - switching between likes and dislikes;
 - rating calculations;
@@ -133,7 +141,7 @@ Run it locally with:
 python manage.py test
 ```
 
-The project currently has **17 automated tests**. GitHub Actions runs the same suite on pushes to `main` and on pull requests.
+The project currently has **19 automated tests**. GitHub Actions runs the same suite on pushes to `main` and on pull requests.
 
 ## Running locally
 
@@ -202,6 +210,16 @@ Open `http://127.0.0.1:8000/`.
 
 Production secrets are configured in Vercel and are never committed to the repository.
 
+## Versioning and releases
+
+Piano Finder follows [Semantic Versioning](https://semver.org/):
+
+- `MAJOR` versions contain incompatible or substantial product changes;
+- `MINOR` versions add backward-compatible features;
+- `PATCH` versions contain backward-compatible fixes.
+
+Every formal release has a Git tag such as `v1.0.0`, a GitHub Release with a concise summary, and a matching entry in [CHANGELOG.md](CHANGELOG.md). The changelog groups changes into `Added`, `Changed`, `Fixed`, and `Security`, which keeps the README focused on presenting the project while preserving its development history. Releases are tagged only after the automated tests pass and the corresponding production deployment is validated.
+
 ## Security
 
 - production starts with `DEBUG=False` unless explicitly configured otherwise;
@@ -209,7 +227,7 @@ Production secrets are configured in Vercel and are never committed to the repos
 - CSRF middleware protects form and JavaScript POST requests;
 - HTTPS redirect, HSTS, secure cookies, MIME sniffing protection, and frame denial are enabled in production;
 - user-provided image URLs are restricted to the configured Cloudinary account;
-- the public form rejects files over 10 MB in the browser, while the Admin enforces the same limit server-side;
+- the public form rejects original files over 10 MB in the browser, while the Admin enforces the same limit server-side;
 - new content remains pending until an administrator approves it;
 - `.env` files, local databases, logs, uploaded media, and personal notes are excluded from Git.
 
@@ -219,6 +237,7 @@ The unsigned Cloudinary preset is intentionally public for browser uploads. Its 
 
 ```text
 .github/       continuous integration workflow
+CHANGELOG.md   version-by-version release history
 docs/images/   README screenshots and community evidence
 mapapianos/    settings, URLs, and WSGI/ASGI entry points
 pianos/        models, forms, views, admin, migrations, and tests
