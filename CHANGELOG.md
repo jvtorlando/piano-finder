@@ -41,7 +41,7 @@ First formal public release of Piano Finder as a production application and port
 - added file-size, image-content, and server-side Admin upload validation;
 - hardened production settings for HTTPS, secure cookies, HSTS, CSRF, framing, and MIME sniffing;
 - added request limits to submissions, comments, votes, and ratings;
-- excluded environment files, local databases, logs, media, and deployment metadata from Git.
+- excluded environment files, local databases, database backups, private keys, virtual environments, caches, logs, media, and deployment metadata from Git.
 
 [Unreleased]: https://github.com/jvtorlando/piano-finder/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/jvtorlando/piano-finder/releases/tag/v1.0.0

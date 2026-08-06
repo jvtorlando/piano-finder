@@ -220,6 +220,8 @@ Piano Finder follows [Semantic Versioning](https://semver.org/):
 
 Every formal release has a Git tag such as `v1.0.0`, a GitHub Release with a concise summary, and a matching entry in [CHANGELOG.md](CHANGELOG.md). The changelog groups changes into `Added`, `Changed`, `Fixed`, and `Security`, which keeps the README focused on presenting the project while preserving its development history. Releases are tagged only after the automated tests pass and the corresponding production deployment is validated.
 
+The first formal production release is [`v1.0.0`](https://github.com/jvtorlando/piano-finder/releases/tag/v1.0.0), published on August 6, 2026.
+
 ## Security
 
 - production starts with `DEBUG=False` unless explicitly configured otherwise;
