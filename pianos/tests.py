@@ -9,7 +9,7 @@ from django.test.client import RequestFactory
 from django.urls import reverse
 
 from .admin import PianoAdmin
-from .forms_admin import PianoAdminForm
+from .forms_admin import MAX_IMAGE_SIZE, PianoAdminForm
 from .forms import PianoForm
 from .models import Comentario, Piano
 
@@ -187,6 +187,36 @@ class PianoFinderTests(TestCase):
         )
 
         self.assertTrue(form.is_valid(), form.errors)
+
+    def test_formulario_admin_rejeita_imagem_acima_de_10_mb(self):
+        gif_um_pixel = (
+            b'GIF89a\x01\x00\x01\x00\x80\x00\x00'
+            b'\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00'
+            b',\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;'
+        )
+        foto = SimpleUploadedFile(
+            'piano-grande.gif',
+            gif_um_pixel + b'0' * MAX_IMAGE_SIZE,
+            content_type='image/gif',
+        )
+        form = PianoAdminForm(
+            data={
+                'nome_local': 'Piano com imagem grande',
+                'endereco': 'Rua da Imagem, 1',
+                'cidade': 'Sao Paulo',
+                'estado': 'SP',
+                'tipo': 'acustico',
+                'ordem': 0,
+                'likes': 0,
+                'dislikes': 0,
+                'estrelas': 0,
+                'total_avaliacoes': 0,
+            },
+            files={'upload_foto': foto},
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('A imagem deve ter no máximo 10 MB.', form.errors['upload_foto'])
 
     def test_comentario_valido_fica_pendente_de_moderacao(self):
         piano = self.criar_piano()

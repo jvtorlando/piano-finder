@@ -1,9 +1,19 @@
-from django.contrib import admin
-from django.conf import settings
-from django.utils.html import format_html
-from .models import Piano, Comentario
+import logging
+
 import cloudinary.uploader
+from cloudinary.exceptions import Error as CloudinaryError
+from django.contrib import admin
+from django.contrib import messages
+from django.conf import settings
+from django.shortcuts import redirect
+from django.utils.html import format_html
+
+from .models import Piano, Comentario
 from .forms_admin import PianoAdminForm
+
+
+logger = logging.getLogger(__name__)
+
 
 class PianoAdmin(admin.ModelAdmin):
     form = PianoAdminForm
@@ -60,8 +70,23 @@ class PianoAdmin(admin.ModelAdmin):
                 cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
                 resource_type='image',
             )
-            obj.foto_url = resultado['secure_url']
+            secure_url = resultado.get('secure_url')
+            if not secure_url:
+                raise CloudinaryError('Cloudinary response did not include secure_url.')
+            obj.foto_url = secure_url
         super().save_model(request, obj, form, change)
+
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
+        try:
+            return super().changeform_view(request, object_id, form_url, extra_context)
+        except CloudinaryError:
+            logger.exception('Cloudinary image upload failed in Django Admin.')
+            self.message_user(
+                request,
+                'Não foi possível enviar a imagem. Verifique o arquivo e tente novamente.',
+                level=messages.ERROR,
+            )
+            return redirect(request.path)
 
     def aprovar_pianos(self, request, queryset):
         queryset.update(aprovado=True)

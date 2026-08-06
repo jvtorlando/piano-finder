@@ -2,40 +2,42 @@
 
 A community-driven platform for locating, rating, and documenting publicly accessible pianos across Brazil.
 
-[Live application](https://piano-finder-seven.vercel.app/) · [GitHub repository](https://github.com/jvtorlando/piano-finder)
+[![Tests](https://github.com/jvtorlando/piano-finder/actions/workflows/tests.yml/badge.svg)](https://github.com/jvtorlando/piano-finder/actions/workflows/tests.yml)
+
+[Live application](https://www.pianofinder.com.br/) · [GitHub repository](https://github.com/jvtorlando/piano-finder)
 
 ## About the project
 
 Piano Finder started with a real problem: finding an acoustic piano available to play in São Paulo was difficult because the existing information was scattered, incomplete, or outdated.
 
-The search initially became content on TikTok. One of the videos reached **88.9K views**, and the community began suggesting new locations. Since visiting and personally verifying every recommendation was not practical, the idea evolved into a platform where users can register and share publicly accessible pianos themselves.
+The search initially became content on TikTok. Community members began suggesting new locations, and one documented search reached **88.9K views**. Since personally verifying every recommendation was not practical, the idea evolved into a collaborative platform where people can register and share publicly accessible pianos.
 
-The project started in São Paulo and was designed to accept community contributions from across Brazil.
+The project began in São Paulo and was designed to accept contributions from across Brazil. It combines a real community use case with relational data modeling, moderation, third-party services, automated tests, and production deployment.
 
-## Demo
+## Live demo
 
-The deployed application is available at [piano-finder-seven.vercel.app](https://piano-finder-seven.vercel.app/).
+The production application is available at [www.pianofinder.com.br](https://www.pianofinder.com.br/).
 
 ### Responsive catalog
 
 <p align="center">
-  <img src="docs/images/home-desktop.png" alt="Piano Finder catalog on desktop" width="72%">
-  <img src="docs/images/home-mobile.png" alt="Piano Finder catalog on mobile" width="20%">
+  <img src="docs/images/home-desktop.png" alt="Piano Finder approved-piano catalog on a desktop screen" width="72%">
+  <img src="docs/images/home-mobile.png" alt="Responsive Piano Finder catalog on a mobile screen" width="20%">
 </p>
 
 ### Piano details and community submission
 
 <p align="center">
-  <img src="docs/images/piano-detail.png" alt="Piano detail page" width="49%">
-  <img src="docs/images/add-piano.png" alt="Community piano submission form" width="49%">
+  <img src="docs/images/piano-detail.png" alt="Piano Finder detail page with location, rating, and availability" width="49%">
+  <img src="docs/images/add-piano.png" alt="Community form for submitting a piano for moderation" width="49%">
 </p>
 
 ## Community validation
 
-Piano Finder first grew as a TikTok project for documenting publicly accessible pianos. The community response helped validate the problem and motivated the development of a collaborative platform. One of the documented searches reached **88.9K views**.
+Piano Finder first grew as a TikTok project documenting public pianos. The response helped validate the problem and motivated the collaborative platform. The image below records the project's public profile and its **88.9K-view video as captured on August 6, 2026**; it is evidence from a specific date rather than a live counter.
 
 <p align="center">
-  <img src="docs/images/tiktok-traction.png" alt="Piano Finder BR TikTok profile showing community engagement and a video with 88.9K views" width="80%">
+  <img src="docs/images/tiktok-traction.png" alt="Piano Finder BR TikTok profile captured on August 6, 2026, including a video with 88.9K views" width="80%">
 </p>
 
 ## Features
@@ -44,26 +46,27 @@ Piano Finder first grew as a TikTok project for documenting publicly accessible 
 - filtering by Brazilian state, city, and piano type;
 - community submissions with up to three images;
 - image storage and delivery through Cloudinary;
-- detail pages with address, availability, description, and Maps access;
-- likes, dislikes, and star ratings;
+- detail pages with address, availability, description, and Google Maps access;
+- likes, dislikes, and one-to-five-star ratings;
 - comments subject to moderation;
 - automatic selection of the three most-liked pianos as featured locations;
-- administrative interface for searching, reviewing, and moderating submissions;
+- Django Admin interface for searching, reviewing, and moderating submissions;
 - responsive interface for desktop and mobile devices.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    U[User] -->|HTTPS| D[Django on Vercel]
-    A[Administrator] -->|Django Admin| D
-    D -->|ORM and SQL| N[(PostgreSQL · Neon)]
-    U -->|Image upload| C[Cloudinary]
-    C -->|Validated URLs| D
-    C -->|Image delivery| U
+    U[User] -->|HTTPS via pianofinder.com.br| V[Django on Vercel]
+    H[Hostinger-managed DNS] -. resolves domain .-> V
+    A[Administrator] -->|Django Admin| V
+    V -->|Django ORM and SQL| N[(PostgreSQL on Neon)]
+    U -->|Direct image upload| C[Cloudinary]
+    C -->|Validated HTTPS URLs| V
+    C -->|Optimized image delivery| U
 ```
 
-In production, the application uses PostgreSQL hosted by Neon. During local development, Django falls back to SQLite when `DATABASE_URL` is not configured.
+Hostinger is the domain registrar and DNS provider; the application itself runs on Vercel. PostgreSQL data is hosted by Neon, while images are stored outside the serverless filesystem in Cloudinary. During local development, Django uses SQLite when `DATABASE_URL` is not configured.
 
 ## Data model
 
@@ -74,62 +77,63 @@ The application has two main domain entities:
 | `Piano` | Stores location, address, type, images, availability, votes, and ratings | Has multiple comments |
 | `Comentario` | Stores an optional author, text, date, and moderation status | Belongs to one piano through a foreign key |
 
-Django creates the primary keys automatically. The relationship between comments and pianos uses a `ForeignKey`, providing referential integrity: when a piano is deleted, its related comments are deleted as well.
+Django creates the primary keys automatically. The `ForeignKey` relationship provides referential integrity: deleting a piano also removes its related comments.
 
-Queries are written with the Django ORM and translated into SQL by the framework. Migrations version both database schema changes and required data changes.
+Application queries use the Django ORM and are translated into SQL. Migrations version both schema changes and the production seed data required by the project.
 
 ## Technical decisions
 
 ### PostgreSQL and Neon
 
-PostgreSQL keeps production data outside Vercel's ephemeral runtime. The connection is provided through `DATABASE_URL`, while SQLite makes local development straightforward.
+PostgreSQL keeps production data outside Vercel's ephemeral runtime. The connection is injected through `DATABASE_URL`, while SQLite keeps local setup lightweight.
 
 ### Cloudinary
 
-Images do not depend on the application's local filesystem. The submission form accepts only HTTPS URLs that belong to the Cloudinary account configured for Piano Finder.
+Images do not depend on the application's local filesystem. Public submissions upload directly to Cloudinary and Django accepts only HTTPS image URLs belonging to the configured Piano Finder cloud. Admin uploads are validated server-side before they are sent to the same service.
 
 ### Moderation workflow
 
-New piano submissions and comments are stored as pending. Only approved records are available on public pages.
+New piano submissions and comments are stored as pending. Only approved records are visible on public pages.
 
 ### Consistent votes and ratings
 
-Like and rating updates use database transactions and row-level locking with `select_for_update()`. This reduces the risk of lost updates when concurrent requests modify the same piano.
+Vote and rating updates use database transactions and row-level locking with `select_for_update()`. This reduces the risk of lost updates when concurrent requests modify the same piano.
 
 ### Abuse prevention
 
-Piano submissions, comments, votes, and ratings have IP-based request limits. The project also uses Django's CSRF protection, server-side validation, and secure cookie and HTTPS settings in production.
+Piano submissions, comments, votes, and ratings have IP-based request limits. The application also uses CSRF protection, server-side validation, production-only secure cookies, HTTPS redirection, and security headers.
 
 ## Technology stack
 
 | Area | Technologies |
 | --- | --- |
-| Backend | Python 3.12+, Django 6 |
+| Backend | Python 3.14, Django 6 |
 | Database | PostgreSQL, Neon, SQLite |
 | Frontend | HTML, CSS, JavaScript |
 | Images | Cloudinary |
-| Infrastructure | Vercel, Neon, Cloudinary, WhiteNoise |
-| Quality | Django TestCase, migrations, Git, GitHub |
+| Infrastructure | Vercel, Hostinger DNS, Neon, Cloudinary, WhiteNoise |
+| Quality | Django TestCase, GitHub Actions, migrations, Git, GitHub |
 
-## Tests
+## Automated tests
 
-The automated test suite covers the main user flows and business rules, including:
+The suite covers the main user flows and business rules, including:
 
-- displaying approved pianos only;
+- visibility of approved and pending pianos;
 - catalog filters;
-- Brazilian state, piano type, and image URL validation;
+- Brazilian state, piano type, and Cloudinary URL validation;
+- public and admin image-upload behavior;
 - comment moderation;
 - switching between likes and dislikes;
 - rating calculations;
 - request limits.
 
-Run the tests with:
+Run it locally with:
 
 ```bash
 python manage.py test
 ```
 
-The project currently has **14 automated tests**.
+The project currently has **17 automated tests**. GitHub Actions runs the same suite on pushes to `main` and on pull requests.
 
 ## Running locally
 
@@ -162,29 +166,23 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-### 4. Configure the environment variables
+### 4. Configure the environment
 
-Create a `.env` file in the project root:
+Copy the safe template and fill in only your local values:
 
-```env
-SECRET_KEY="generate-a-secure-local-key"
-DEBUG=True
-ALLOWED_HOSTS=127.0.0.1,localhost
-CSRF_TRUSTED_ORIGINS=
-
-# Required for image uploads
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-CLOUDINARY_UPLOAD_PRESET=pianos_unsigned
-
-# Optional locally; without this variable, the project uses SQLite
-DATABASE_URL=
+```powershell
+Copy-Item .env.example .env
 ```
 
-Never publish the `.env` file or share its values. The file is already listed in `.gitignore`.
+On Linux or macOS, use `cp .env.example .env`. Generate a local Django key with:
 
-### 5. Prepare the database and start the application
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+Never publish `.env` files or paste their values into issues, commits, screenshots, or documentation.
+
+### 5. Prepare the database and run the application
 
 ```bash
 python manage.py migrate
@@ -193,37 +191,65 @@ python manage.py runserver
 
 Open `http://127.0.0.1:8000/`.
 
+## Deployment
+
+1. Changes are reviewed and merged into `main`.
+2. GitHub Actions runs the Django test suite.
+3. Vercel builds the production deployment using Python 3.14 from `.python-version`.
+4. The production build applies Django migrations when `DATABASE_URL` is available.
+5. WhiteNoise serves static assets, Neon persists relational data, and Cloudinary stores uploaded images.
+6. Hostinger DNS maps `pianofinder.com.br` and `www.pianofinder.com.br` to Vercel; the apex domain redirects to `www`.
+
+Production secrets are configured in Vercel and are never committed to the repository.
+
+## Security
+
+- production starts with `DEBUG=False` unless explicitly configured otherwise;
+- production refuses to start without `SECRET_KEY`, `DATABASE_URL`, and the required Cloudinary settings;
+- CSRF middleware protects form and JavaScript POST requests;
+- HTTPS redirect, HSTS, secure cookies, MIME sniffing protection, and frame denial are enabled in production;
+- user-provided image URLs are restricted to the configured Cloudinary account;
+- the public form rejects files over 10 MB in the browser, while the Admin enforces the same limit server-side;
+- new content remains pending until an administrator approves it;
+- `.env` files, local databases, logs, uploaded media, and personal notes are excluded from Git.
+
+The unsigned Cloudinary preset is intentionally public for browser uploads. Its allowed formats, maximum file size, and target folder must also remain restricted in the Cloudinary dashboard.
+
 ## Project structure
 
 ```text
-mapapianos/     settings, URLs, and WSGI/ASGI entry points
-pianos/         models, forms, views, admin, migrations, and tests
-static/         project static files
-manage.py       Django administrative commands
-pyproject.toml  project metadata, dependencies, and Vercel build setup
+.github/       continuous integration workflow
+docs/images/   README screenshots and community evidence
+mapapianos/    settings, URLs, and WSGI/ASGI entry points
+pianos/        models, forms, views, admin, migrations, and tests
+static/        project static files
+.env.example   safe environment-variable template
+manage.py      Django administrative commands
+pyproject.toml project metadata, dependencies, and Vercel build setup
 ```
 
 ## Current limitations
 
-- votes and ratings are tracked by session rather than individual user accounts;
+- votes and ratings are tracked by session rather than authenticated user accounts;
 - moderation depends on the administrative interface;
-- rate limiting uses in-memory cache and is configured for a single worker;
+- the in-memory rate-limit cache is not shared across serverless instances;
+- duplicate piano submissions are not yet detected automatically;
 - locations do not yet store latitude and longitude in the database;
-- the repository does not yet have a public continuous integration pipeline.
+- community metrics shown in the README are dated snapshots, not live analytics.
 
 ## Next steps
 
 - add geographic search and map visualization;
 - record when each piano was last verified;
-- build indicators for cities, piano types, and instrument availability;
-- improve duplicate-submission prevention;
-- add continuous integration for tests and quality checks.
+- add duplicate-submission detection;
+- move rate-limit counters to a shared store such as Redis;
+- create analytics for cities, piano types, and instrument availability.
 
 ## Author
 
 Developed by [João Vitor Teixeira Orlando](https://github.com/jvtorlando), a Computer Science student at Mackenzie Presbyterian University.
 
-This project is part of my portfolio for opportunities in Data, Analytics, and Software Engineering. It demonstrates practical experience with Python, Django, SQL, relational data modeling, service integrations, automated tests, and deployment.
+This project is part of my portfolio for opportunities in Data, Analytics, and Software Engineering. It demonstrates practical experience with Python, Django, SQL, relational data modeling, service integrations, automated tests, security controls, and production deployment.
 
 ## AI-assisted development
 
