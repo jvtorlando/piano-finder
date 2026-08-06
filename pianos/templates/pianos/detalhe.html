@@ -239,9 +239,18 @@
                 max-height: 360px;
                 background: #0d0d0d;
             }
+            .hero-slide {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
             .hero-slide img {
-                object-fit: contain;
-                object-position: center center;
+                width: auto;
+                height: auto;
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: fill;
+                flex: 0 0 auto;
             }
             .hero::after {
                 background: linear-gradient(to bottom, transparent 50%, rgba(13,13,13,0.95) 95%);
