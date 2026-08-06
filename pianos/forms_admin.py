@@ -11,7 +11,14 @@ class PianoAdminForm(forms.ModelForm):
     upload_foto = forms.ImageField(
         required=False,
         label='Enviar nova foto',
-        help_text='Imagem JPG, PNG, WEBP ou GIF com até 10 MB.',
+        help_text=(
+            'Antes do envio, ajuste a foto no formato 16:10. '
+            'Imagem JPG, PNG, WEBP ou GIF com até 10 MB; o resultado será convertido em JPG.'
+        ),
+        widget=forms.ClearableFileInput(attrs={
+            'accept': 'image/*',
+            'data-piano-image-cropper': 'true',
+        }),
     )
 
     class Meta:
