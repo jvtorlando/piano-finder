@@ -5,6 +5,7 @@ django-cloudinary-storage @ git+https://github.com/klis87/django-cloudinary-stor
 django-ratelimit==4.1.0
 gunicorn==25.3.0
 psycopg2-binary==2.9.11
+Pillow==12.3.0
 python-dotenv==1.2.2
 tzdata==2025.3
 whitenoise==6.12.0

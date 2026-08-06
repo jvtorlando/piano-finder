@@ -9,6 +9,7 @@ from django.test.client import RequestFactory
 from django.urls import reverse
 
 from .admin import PianoAdmin
+from .forms_admin import PianoAdminForm
 from .forms import PianoForm
 from .models import Comentario, Piano
 
@@ -157,6 +158,35 @@ class PianoFinderTests(TestCase):
         self.assertEqual(upload.call_args.args[0].name, foto.name)
         self.assertEqual(piano.foto_url, upload.return_value['secure_url'])
         self.assertTrue(Piano.objects.filter(pk=piano.pk).exists())
+
+    def test_formulario_admin_valida_arquivo_de_imagem(self):
+        gif_um_pixel = (
+            b'GIF89a\x01\x00\x01\x00\x80\x00\x00'
+            b'\x00\x00\x00\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00'
+            b',\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;'
+        )
+        foto = SimpleUploadedFile(
+            'piano.gif',
+            gif_um_pixel,
+            content_type='image/gif',
+        )
+        form = PianoAdminForm(
+            data={
+                'nome_local': 'Piano com imagem',
+                'endereco': 'Rua da Imagem, 1',
+                'cidade': 'Sao Paulo',
+                'estado': 'SP',
+                'tipo': 'acustico',
+                'ordem': 0,
+                'likes': 0,
+                'dislikes': 0,
+                'estrelas': 0,
+                'total_avaliacoes': 0,
+            },
+            files={'upload_foto': foto},
+        )
+
+        self.assertTrue(form.is_valid(), form.errors)
 
     def test_comentario_valido_fica_pendente_de_moderacao(self):
         piano = self.criar_piano()
