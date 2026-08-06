@@ -1,8 +1,14 @@
+from unittest.mock import ANY, patch
+
+from django.contrib.admin.sites import AdminSite
 from django.conf import settings
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
+from django.test.client import RequestFactory
 from django.urls import reverse
 
+from .admin import PianoAdmin
 from .forms import PianoForm
 from .models import Comentario, Piano
 
@@ -114,6 +120,43 @@ class PianoFinderTests(TestCase):
             settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
         )
         self.assertContains(resposta, settings.CLOUDINARY_UPLOAD_PRESET)
+
+    @patch('pianos.admin.cloudinary.uploader.unsigned_upload')
+    def test_admin_envia_foto_com_o_preset_unsigned(self, upload):
+        upload.return_value = {
+            'secure_url': 'https://res.cloudinary.com/piano-finder-tests/image/upload/admin.jpg',
+        }
+        foto = SimpleUploadedFile(
+            'piano.jpg',
+            b'imagem-de-teste',
+            content_type='image/jpeg',
+        )
+        request = RequestFactory().post('/admin/pianos/piano/add/', {
+            'upload_foto': foto,
+        })
+        piano = Piano(
+            nome_local='Piano pelo admin',
+            endereco='Rua do Admin, 1',
+            cidade='Sao Paulo',
+            estado='SP',
+        )
+
+        PianoAdmin(Piano, AdminSite()).save_model(
+            request,
+            piano,
+            form=None,
+            change=False,
+        )
+
+        upload.assert_called_once_with(
+            ANY,
+            settings.CLOUDINARY_UPLOAD_PRESET,
+            cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+            resource_type='image',
+        )
+        self.assertEqual(upload.call_args.args[0].name, foto.name)
+        self.assertEqual(piano.foto_url, upload.return_value['secure_url'])
+        self.assertTrue(Piano.objects.filter(pk=piano.pk).exists())
 
     def test_comentario_valido_fica_pendente_de_moderacao(self):
         piano = self.criar_piano()

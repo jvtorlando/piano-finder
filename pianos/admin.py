@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.conf import settings
 from django.utils.html import format_html
 from .models import Piano, Comentario
 import cloudinary.uploader
@@ -51,12 +52,16 @@ class PianoAdmin(admin.ModelAdmin):
     preview_fotos.short_description = 'Preview'
 
     def save_model(self, request, obj, form, change):
-        super().save_model(request, obj, form, change)
         if 'upload_foto' in request.FILES:
             foto = request.FILES['upload_foto']
-            resultado = cloudinary.uploader.upload(foto, folder='pianos/')
+            resultado = cloudinary.uploader.unsigned_upload(
+                foto,
+                settings.CLOUDINARY_UPLOAD_PRESET,
+                cloud_name=settings.CLOUDINARY_STORAGE['CLOUD_NAME'],
+                resource_type='image',
+            )
             obj.foto_url = resultado['secure_url']
-            obj.save()
+        super().save_model(request, obj, form, change)
 
     def aprovar_pianos(self, request, queryset):
         queryset.update(aprovado=True)
