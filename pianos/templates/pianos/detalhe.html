@@ -231,6 +231,35 @@
             .hero { height: 50vh; max-height: 600px; }
             .action-btn { padding: 1rem 1.5rem; flex-direction: row; gap: 6px; font-size: 0.72rem; }
         }
+
+        @media (max-width: 599px) {
+            .hero {
+                height: auto;
+                min-height: 0;
+                max-height: none;
+                aspect-ratio: 16 / 10;
+                background: #0d0d0d;
+            }
+            .hero-slide {
+                position: relative;
+                display: block;
+                overflow: hidden;
+            }
+            .hero-slide img {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                max-width: none;
+                max-height: none;
+                object-fit: cover;
+                object-position: center;
+                flex: none;
+            }
+            .hero::after {
+                background: linear-gradient(to bottom, transparent 50%, rgba(13,13,13,0.95) 95%);
+            }
+        }
     </style>
 </head>
 <body>

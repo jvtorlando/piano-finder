@@ -122,6 +122,28 @@ class PianoFinderTests(TestCase):
         )
         self.assertContains(resposta, settings.CLOUDINARY_UPLOAD_PRESET)
 
+    def test_formulario_publico_carrega_recorte_compartilhado_16_10(self):
+        resposta = self.client.get(reverse('adicionar_piano'))
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, 'pianos/image-cropper.css')
+        self.assertContains(resposta, 'pianos/image-cropper.js')
+        self.assertContains(resposta, 'A foto será ajustada no formato 16:10')
+
+    def test_admin_configura_recorte_compartilhado_no_upload(self):
+        piano_admin = PianoAdmin(Piano, AdminSite())
+        media = piano_admin.media
+        widget = PianoAdminForm().fields['upload_foto'].widget
+
+        self.assertIn('pianos/image-cropper.css', media._css['all'])
+        self.assertIn('pianos/image-cropper.js', media._js)
+        self.assertIn('pianos/admin-image-crop.js', media._js)
+        self.assertEqual(
+            widget.attrs.get('data-piano-image-cropper'),
+            'true',
+        )
+        self.assertIn('16:10', PianoAdminForm().fields['upload_foto'].help_text)
+
     @patch('pianos.admin.cloudinary.uploader.unsigned_upload')
     def test_admin_envia_foto_com_o_preset_unsigned(self, upload):
         upload.return_value = {

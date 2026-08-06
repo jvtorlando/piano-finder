@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'pianos/image-cropper.css' %}">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -119,7 +120,7 @@
         .dropzone-icon { font-size: 1.8rem; margin-bottom: 0.5rem; opacity: 0.35; }
         .dropzone-text { font-size: 0.82rem; color: var(--muted); }
         .dropzone-text strong { color: var(--gold); font-weight: 500; }
-        .dropzone-sub { font-size: 0.68rem; color: #444; margin-top: 0.2rem; }
+        .dropzone-sub { font-size: 0.68rem; color: #a4a09a; margin-top: 0.2rem; }
 
         .btn-escolher-arquivo {
             display: flex; align-items: center; justify-content: center; gap: 0.5rem;
@@ -136,7 +137,7 @@
 
         .fotos-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.6rem; }
         .foto-thumb {
-            position: relative; width: 68px; height: 68px;
+            position: relative; width: clamp(96px, 28vw, 128px); aspect-ratio: 16 / 10;
             border-radius: 4px; overflow: hidden; border: 1px solid var(--border);
         }
         .foto-thumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -358,7 +359,7 @@
                 <input type="file" accept="image/*" id="fotoInput">
                 <div class="dropzone-icon">🎹</div>
                 <p class="dropzone-text"><strong>Solte aqui</strong> ou toque para escolher</p>
-                <p class="dropzone-sub">Foto principal do piano</p>
+                <p class="dropzone-sub">A foto será ajustada no formato 16:10</p>
             </div>
 
             <label class="btn-escolher-arquivo" id="btnEscolherArquivo">
@@ -399,6 +400,7 @@
     </div>
 </div>
 
+<script src="{% static 'pianos/image-cropper.js' %}"></script>
 <script>
 // ── TIPO ──
 const tipoFinal = document.getElementById('tipoFinal');
@@ -437,8 +439,10 @@ const btnEscolher = document.getElementById('btnEscolherArquivo');
 const btnSubmit   = document.getElementById('btnSubmit');
 const uploadError = document.getElementById('uploadError');
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+let cropPending = 0;
+let cropQueue = Promise.resolve();
 
-// slots: { localUrl, uploading, error, token }
+// slots: { localUrl, uploading, error, token, controller }
 const slots = [null, null, null];
 
 function showUploadError(message = '') {
@@ -470,6 +474,7 @@ function renderPreview() {
         rm.textContent = '×';
         rm.setAttribute('aria-label', `Remover foto ${i + 1}`);
         rm.onclick = () => {
+            if (s.controller) s.controller.abort();
             URL.revokeObjectURL(s.localUrl);
             slots[i] = null;
             urlInputs[i].value = '';
@@ -493,8 +498,10 @@ function renderPreview() {
         preview.appendChild(thumb);
     });
 
-    btnSubmit.disabled = pendentes > 0 || falhas > 0;
-    if (pendentes > 0) {
+    btnSubmit.disabled = cropPending > 0 || pendentes > 0 || falhas > 0;
+    if (cropPending > 0) {
+        btnSubmit.textContent = 'Ajustando foto...';
+    } else if (pendentes > 0) {
         btnSubmit.textContent = `Aguarde... (${pendentes} foto${pendentes > 1 ? 's' : ''})`;
     } else if (falhas > 0) {
         btnSubmit.textContent = 'Remova a foto com erro';
@@ -519,14 +526,21 @@ function renderPreview() {
 
 async function uploadFoto(file, idx) {
     const token = slots[idx].token;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 60000);
     const fd = new FormData();
     fd.append('file', file);
     fd.append('upload_preset', PRESET);
     slots[idx].uploading = true;
+    slots[idx].controller = controller;
     renderPreview();
     try {
         if (!CLOUD || !PRESET) throw new Error('Configuração de upload indisponível.');
-        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, { method: 'POST', body: fd });
+        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, {
+            method: 'POST',
+            body: fd,
+            signal: controller.signal,
+        });
         const data = await res.json();
         if (!res.ok || !data.secure_url) {
             throw new Error(data.error?.message || 'O Cloudinary recusou a imagem.');
@@ -534,44 +548,95 @@ async function uploadFoto(file, idx) {
         if (!slots[idx] || slots[idx].token !== token) return;
         slots[idx].uploading = false;
         slots[idx].error = false;
+        slots[idx].controller = null;
         urlInputs[idx].value = data.secure_url;
     } catch(e) {
         if (!slots[idx] || slots[idx].token !== token) return;
         slots[idx].uploading = false;
         slots[idx].error = true;
+        slots[idx].controller = null;
         urlInputs[idx].value = '';
-        showUploadError(`Não foi possível enviar a foto: ${e.message} Remova-a e tente novamente.`);
+        const reason = e.name === 'AbortError'
+            ? 'o envio demorou mais de 60 segundos'
+            : e.message;
+        showUploadError(`Não foi possível enviar a foto: ${reason}. Remova-a e tente novamente.`);
         console.error('Erro no upload:', e);
+    } finally {
+        window.clearTimeout(timeoutId);
     }
     renderPreview();
 }
 
-function addFile(file) {
+function validateImageFile(file) {
     if (!file || !file.type.startsWith('image/')) {
         showUploadError('Escolha um arquivo de imagem válido.');
-        return;
+        return false;
     }
     if (file.size > MAX_FILE_SIZE) {
         showUploadError('Cada foto deve ter no máximo 10 MB.');
+        return false;
+    }
+    return true;
+}
+
+async function addFile(file) {
+    if (!validateImageFile(file)) return;
+    if (!window.PianoImageCropper) {
+        showUploadError('O ajustador de imagem não foi carregado. Atualize a página e tente novamente.');
         return;
     }
+    if (slots.findIndex(s => s === null) === -1) return;
+
+    cropPending += 1;
+    renderPreview();
+
+    let croppedFile;
+    try {
+        croppedFile = await window.PianoImageCropper.crop(file, {
+            aspectRatio: 16 / 10,
+            outputWidth: 1600,
+            outputHeight: 1000,
+            quality: 0.9,
+        });
+    } catch (error) {
+        showUploadError(`Não foi possível ajustar a foto: ${error.message}`);
+        console.error('Erro no recorte:', error);
+        return;
+    } finally {
+        cropPending -= 1;
+        renderPreview();
+    }
+
+    if (!croppedFile || !validateImageFile(croppedFile)) return;
     const idx = slots.findIndex(s => s === null);
     if (idx === -1) return;
-    showUploadError();
+    if (!slots.some(slot => slot && slot.error)) showUploadError();
     slots[idx] = {
-        localUrl: URL.createObjectURL(file),
+        localUrl: URL.createObjectURL(croppedFile),
         uploading: false,
         error: false,
         token: `${Date.now()}-${Math.random()}`,
+        controller: null,
     };
     renderPreview();
-    uploadFoto(file, idx);
+    uploadFoto(croppedFile, idx);
+}
+
+function enqueueFile(file) {
+    cropQueue = cropQueue
+        .then(() => addFile(file))
+        .catch(error => {
+            showUploadError(`Não foi possível processar a foto: ${error.message}`);
+            console.error('Erro ao processar fila de imagens:', error);
+        });
+    return cropQueue;
 }
 
 // Eventos
 function handleFileInput() {
-    if (this.files[0]) addFile(this.files[0]);
+    const file = this.files[0];
     this.value = '';
+    if (file) enqueueFile(file);
 }
 document.getElementById('fotoInput').addEventListener('change', handleFileInput);
 document.getElementById('fotoBtnInput').addEventListener('change', handleFileInput);
@@ -588,14 +653,17 @@ dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-ove
 dropzone.addEventListener('drop', e => {
     e.preventDefault();
     dropzone.classList.remove('drag-over');
-    [...e.dataTransfer.files].filter(f => f.type.startsWith('image/')).slice(0, 3).forEach(addFile);
+    [...e.dataTransfer.files]
+        .filter(f => f.type.startsWith('image/'))
+        .slice(0, 3)
+        .forEach(enqueueFile);
 });
 
 // Loading bar no submit
 document.getElementById('mainForm').addEventListener('submit', event => {
-    if (slots.some(slot => slot && (slot.uploading || slot.error))) {
+    if (cropPending > 0 || slots.some(slot => slot && (slot.uploading || slot.error))) {
         event.preventDefault();
-        showUploadError('Aguarde os uploads ou remova a foto que apresentou erro.');
+        showUploadError('Conclua o ajuste das fotos, aguarde os uploads ou remova a foto que apresentou erro.');
         return;
     }
     const bar = document.getElementById('loading-bar');

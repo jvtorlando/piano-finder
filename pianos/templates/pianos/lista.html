@@ -376,16 +376,31 @@
         }
         @media (max-width: 599px) {
             .card-img-wrap {
-                height: 56vw;
-                max-height: 260px;
-                background: #111;
+                height: auto;
+                min-height: 0;
+                max-height: none;
+                aspect-ratio: 16 / 10;
+                background: #0d0d0d;
+            }
+            .carousel-slide {
+                position: relative;
+                display: block;
+                overflow: hidden;
             }
             .card-img {
+                position: absolute;
+                inset: 0;
+                width: 100%;
+                height: 100%;
+                max-width: none;
+                max-height: none;
                 object-fit: cover;
-                filter: brightness(0.88);
+                object-position: center;
+                flex: none;
+                filter: brightness(0.92);
             }
             .card-img-wrap::after {
-                background: linear-gradient(to bottom, transparent 45%, rgba(13,13,13,0.92) 85%);
+                background: linear-gradient(to bottom, transparent 55%, rgba(13,13,13,0.95) 92%);
             }
         }
     </style>

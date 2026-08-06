@@ -17,6 +17,16 @@ logger = logging.getLogger(__name__)
 
 class PianoAdmin(admin.ModelAdmin):
     form = PianoAdminForm
+
+    class Media:
+        css = {
+            'all': ('pianos/image-cropper.css',),
+        }
+        js = (
+            'pianos/image-cropper.js',
+            'pianos/admin-image-crop.js',
+        )
+
     list_display = (
         'nome_local', 'cidade', 'estado', 'tipo', 'aprovado',
         'esta_funcionando', 'destaque', 'likes', 'data_cadastro', 'thumb',

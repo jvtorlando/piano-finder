@@ -1,0 +1,393 @@
+.pf-cropper-overlay,
+.pf-cropper-overlay *,
+.pf-cropper-overlay *::before,
+.pf-cropper-overlay *::after {
+    box-sizing: border-box;
+}
+
+.pf-cropper-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.82);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: #f5f0e8;
+    font-family: "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.piano-image-crop-status {
+    min-height: 1.25rem;
+    margin-top: 0.45rem;
+    color: var(--body-quiet-color, #666666);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.piano-image-crop-status.errornote {
+    color: var(--error-fg, #ba2121);
+}
+
+.pf-cropper-dialog {
+    width: min(960px, 100%);
+    max-height: calc(100dvh - 48px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #111111;
+    border: 1px solid #34302a;
+    border-radius: 12px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.62);
+    animation: pf-cropper-enter 180ms ease-out;
+}
+
+.pf-cropper-dialog:focus {
+    outline: none;
+}
+
+.pf-cropper-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 24px 17px;
+    border-bottom: 1px solid #292929;
+}
+
+.pf-cropper-heading {
+    min-width: 0;
+}
+
+.pf-cropper-title {
+    margin: 0;
+    color: #f5f0e8;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: clamp(1.25rem, 2vw, 1.65rem);
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.pf-cropper-description {
+    margin: 5px 0 0;
+    color: #a4a09a;
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.pf-cropper-close {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid #393939;
+    border-radius: 50%;
+    background: #1b1b1b;
+    color: #d5d0c8;
+    font: 400 1.55rem/1 system-ui, sans-serif;
+    cursor: pointer;
+}
+
+.pf-cropper-close:hover {
+    border-color: #c9a84c;
+    color: #e8c96a;
+}
+
+.pf-cropper-main {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 20px 24px 16px;
+    overscroll-behavior: contain;
+}
+
+.pf-cropper-stage-frame {
+    width: min(800px, 100%);
+    margin: 0 auto;
+    overflow: hidden;
+    border: 1px solid #4a4439;
+    border-radius: 5px;
+    background: #ffffff;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.34);
+}
+
+.pf-cropper-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 8 / 5;
+    overflow: hidden;
+    background: #ffffff;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.pf-cropper-stage:focus-visible {
+    outline: 3px solid #e8c96a;
+    outline-offset: -3px;
+}
+
+.pf-cropper-stage-dragging {
+    cursor: grabbing;
+}
+
+.pf-cropper-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: #ffffff;
+    pointer-events: none;
+}
+
+.pf-cropper-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+    background-image:
+        linear-gradient(
+            to right,
+            transparent calc(33.333% - 0.5px),
+            rgba(255, 255, 255, 0.58) calc(33.333% - 0.5px),
+            rgba(255, 255, 255, 0.58) calc(33.333% + 0.5px),
+            transparent calc(33.333% + 0.5px)
+        ),
+        linear-gradient(
+            to right,
+            transparent calc(66.667% - 0.5px),
+            rgba(255, 255, 255, 0.58) calc(66.667% - 0.5px),
+            rgba(255, 255, 255, 0.58) calc(66.667% + 0.5px),
+            transparent calc(66.667% + 0.5px)
+        ),
+        linear-gradient(
+            to bottom,
+            transparent calc(33.333% - 0.5px),
+            rgba(255, 255, 255, 0.58) calc(33.333% - 0.5px),
+            rgba(255, 255, 255, 0.58) calc(33.333% + 0.5px),
+            transparent calc(33.333% + 0.5px)
+        ),
+        linear-gradient(
+            to bottom,
+            transparent calc(66.667% - 0.5px),
+            rgba(255, 255, 255, 0.58) calc(66.667% - 0.5px),
+            rgba(255, 255, 255, 0.58) calc(66.667% + 0.5px),
+            transparent calc(66.667% + 0.5px)
+        );
+    mix-blend-mode: difference;
+    opacity: 0.72;
+}
+
+.pf-cropper-hint {
+    width: min(800px, 100%);
+    margin: 10px auto 0;
+    color: #aaa59d;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.pf-cropper-controls {
+    width: min(800px, 100%);
+    margin: 16px auto 0;
+    display: grid;
+    grid-template-columns: auto minmax(180px, 1fr) 54px auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.pf-cropper-zoom-label {
+    color: #c9a84c;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.pf-cropper-zoom-input {
+    width: 100%;
+    min-width: 0;
+    accent-color: #c9a84c;
+    cursor: pointer;
+}
+
+.pf-cropper-zoom-input:focus-visible,
+.pf-cropper-close:focus-visible,
+.pf-cropper-reset:focus-visible,
+.pf-cropper-cancel:focus-visible,
+.pf-cropper-confirm:focus-visible {
+    outline: 2px solid #e8c96a;
+    outline-offset: 2px;
+}
+
+.pf-cropper-zoom-value {
+    color: #d2cdc5;
+    font-size: 0.76rem;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.pf-cropper-reset,
+.pf-cropper-cancel,
+.pf-cropper-confirm {
+    min-height: 42px;
+    padding: 0.68rem 1rem;
+    border-radius: 3px;
+    font: 600 0.72rem/1.2 "DM Sans", system-ui, sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.pf-cropper-reset {
+    border: 1px solid #393939;
+    background: transparent;
+    color: #aaa59d;
+}
+
+.pf-cropper-reset:hover,
+.pf-cropper-cancel:hover {
+    border-color: #c9a84c;
+    color: #e8c96a;
+}
+
+.pf-cropper-status {
+    min-height: 1.1rem;
+    width: min(800px, 100%);
+    margin: 8px auto 0;
+    color: #c9a84c;
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+.pf-cropper-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid #292929;
+    background: #0d0d0d;
+}
+
+.pf-cropper-cancel {
+    border: 1px solid #393939;
+    background: transparent;
+    color: #b8b3aa;
+}
+
+.pf-cropper-confirm {
+    min-width: 176px;
+    border: 1px solid #c9a84c;
+    background: #c9a84c;
+    color: #0d0d0d;
+}
+
+.pf-cropper-confirm:hover {
+    border-color: #e8c96a;
+    background: #e8c96a;
+}
+
+.pf-cropper-close:disabled,
+.pf-cropper-reset:disabled,
+.pf-cropper-cancel:disabled,
+.pf-cropper-confirm:disabled,
+.pf-cropper-zoom-input:disabled {
+    cursor: wait;
+    opacity: 0.58;
+}
+
+@keyframes pf-cropper-enter {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 720px) {
+    .pf-cropper-overlay {
+        align-items: flex-end;
+        padding: 8px;
+    }
+
+    .pf-cropper-dialog {
+        max-height: calc(100dvh - 16px);
+        border-radius: 12px 12px 8px 8px;
+    }
+
+    .pf-cropper-header {
+        padding: 17px 17px 14px;
+    }
+
+    .pf-cropper-main {
+        padding: 16px 14px 12px;
+    }
+
+    .pf-cropper-controls {
+        grid-template-columns: auto minmax(100px, 1fr) 48px;
+        gap: 9px;
+    }
+
+    .pf-cropper-reset {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .pf-cropper-footer {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 13px 14px max(14px, env(safe-area-inset-bottom));
+    }
+
+    .pf-cropper-cancel,
+    .pf-cropper-confirm {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .pf-cropper-overlay {
+        padding: 0;
+    }
+
+    .pf-cropper-dialog {
+        width: 100%;
+        height: 100dvh;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .pf-cropper-description {
+        max-width: 290px;
+        font-size: 0.76rem;
+    }
+
+    .pf-cropper-main {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .pf-cropper-hint {
+        font-size: 0.67rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pf-cropper-dialog {
+        animation: none;
+    }
+}
