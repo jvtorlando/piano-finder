@@ -231,6 +231,22 @@
             .hero { height: 50vh; max-height: 600px; }
             .action-btn { padding: 1rem 1.5rem; flex-direction: row; gap: 6px; font-size: 0.72rem; }
         }
+
+        @media (max-width: 599px) {
+            .hero {
+                height: 75vw;
+                min-height: 280px;
+                max-height: 360px;
+                background: #0d0d0d;
+            }
+            .hero-slide img {
+                object-fit: contain;
+                object-position: center center;
+            }
+            .hero::after {
+                background: linear-gradient(to bottom, transparent 50%, rgba(13,13,13,0.95) 95%);
+            }
+        }
     </style>
 </head>
 <body>

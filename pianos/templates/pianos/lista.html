@@ -376,16 +376,18 @@
         }
         @media (max-width: 599px) {
             .card-img-wrap {
-                height: 56vw;
-                max-height: 260px;
-                background: #111;
+                height: 70vw;
+                min-height: 240px;
+                max-height: 320px;
+                background: #0d0d0d;
             }
             .card-img {
-                object-fit: cover;
-                filter: brightness(0.88);
+                object-fit: contain;
+                object-position: center center;
+                filter: brightness(0.92);
             }
             .card-img-wrap::after {
-                background: linear-gradient(to bottom, transparent 45%, rgba(13,13,13,0.92) 85%);
+                background: linear-gradient(to bottom, transparent 55%, rgba(13,13,13,0.95) 92%);
             }
         }
     </style>
