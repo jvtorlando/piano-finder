@@ -1,10 +1,14 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.conf import settings
 from django.contrib import messages
+from django.db import transaction
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from django_ratelimit.decorators import ratelimit
+from django_ratelimit.exceptions import Ratelimited
+
 from .models import Piano, Comentario
 from .forms import PianoForm, ComentarioForm
-import cloudinary.uploader
 
 ESTADOS = [
     ('AC','Acre'), ('AL','Alagoas'), ('AP','Amapá'), ('AM','Amazonas'),
@@ -51,24 +55,28 @@ def lista_pianos(request):
     })
 
 
+@ratelimit(key='ip', rate='5/h', method='POST', block=True)
 def adicionar_piano(request):
     if request.method == 'POST':
-        form = PianoForm(request.POST, request.FILES)
+        form = PianoForm(request.POST)
         if form.is_valid():
             piano = form.save(commit=False)
-            for campo, attr in [('foto', 'foto_url'), ('foto_2', 'foto_url_2'), ('foto_3', 'foto_url_3')]:
-                arquivo = request.FILES.get(campo)
-                if arquivo:
-                    resultado = cloudinary.uploader.upload(arquivo, folder='pianos/')
-                    setattr(piano, attr, resultado['secure_url'])
+            piano.foto_url = form.cleaned_data.get('foto_url_1') or None
+            piano.foto_url_2 = form.cleaned_data.get('foto_url_2') or None
+            piano.foto_url_3 = form.cleaned_data.get('foto_url_3') or None
             piano.save()
             messages.success(request, 'Sua sugestão foi enviada! Ela será analisada e publicada em breve.')
             return redirect('home')
     else:
         form = PianoForm()
-    return render(request, 'pianos/adicionar.html', {'form': form})
+    return render(request, 'pianos/adicionar.html', {
+        'form': form,
+        'cloudinary_cloud_name': settings.CLOUDINARY_STORAGE.get('CLOUD_NAME', ''),
+        'cloudinary_upload_preset': settings.CLOUDINARY_UPLOAD_PRESET,
+    })
 
 
+@ratelimit(key='ip', rate='10/h', method='POST', block=True)
 def detalhe_piano(request, piano_id):
     piano = get_object_or_404(Piano, id=piano_id, aprovado=True)
     comentarios = piano.comentarios.filter(aprovado=True).order_by('-data')
@@ -87,65 +95,73 @@ def detalhe_piano(request, piano_id):
         'piano': piano,
         'comentarios': comentarios,
         'form': form,
+        'voto_atual': request.session.get(f'voto_piano_{piano_id}'),
+        'minha_avaliacao': request.session.get(f'estrelas_piano_{piano_id}'),
     })
 
 
 @require_POST
+@ratelimit(key='ip', rate='60/h', method='POST', block=True)
 def like_piano(request, piano_id):
-    piano = get_object_or_404(Piano, id=piano_id, aprovado=True)
-    acao = request.POST.get('acao')  # 'like' ou 'dislike'
+    acao = request.POST.get('acao')
+    if acao not in {'like', 'dislike'}:
+        return JsonResponse({'erro': 'Ação de voto inválida.'}, status=400)
 
-    # Controle por sessão para evitar múltiplos votos
     session_key = f'voto_piano_{piano_id}'
     voto_atual = request.session.get(session_key)
 
-    if acao == 'like':
-        if voto_atual == 'like':
-            # Remove like
-            piano.likes = max(0, piano.likes - 1)
-            del request.session[session_key]
-            voto_atual = None
+    with transaction.atomic():
+        piano = get_object_or_404(
+            Piano.objects.select_for_update(),
+            id=piano_id,
+            aprovado=True,
+        )
+
+        if acao == 'like':
+            if voto_atual == 'like':
+                piano.likes = max(0, piano.likes - 1)
+                request.session.pop(session_key, None)
+                voto_atual = None
+            else:
+                if voto_atual == 'dislike':
+                    piano.dislikes = max(0, piano.dislikes - 1)
+                piano.likes += 1
+                request.session[session_key] = 'like'
+                voto_atual = 'like'
         else:
             if voto_atual == 'dislike':
                 piano.dislikes = max(0, piano.dislikes - 1)
-            piano.likes += 1
-            request.session[session_key] = 'like'
-            voto_atual = 'like'
-    elif acao == 'dislike':
-        if voto_atual == 'dislike':
-            piano.dislikes = max(0, piano.dislikes - 1)
-            del request.session[session_key]
-            voto_atual = None
-        else:
-            if voto_atual == 'like':
-                piano.likes = max(0, piano.likes - 1)
-            piano.dislikes += 1
-            request.session[session_key] = 'dislike'
-            voto_atual = 'dislike'
+                request.session.pop(session_key, None)
+                voto_atual = None
+            else:
+                if voto_atual == 'like':
+                    piano.likes = max(0, piano.likes - 1)
+                piano.dislikes += 1
+                request.session[session_key] = 'dislike'
+                voto_atual = 'dislike'
 
-    piano.save()
+        piano.save(update_fields=['likes', 'dislikes'])
 
-    # Atualiza destaque automaticamente (top 3 com mais likes)
-    top_ids = list(
-        Piano.objects.filter(aprovado=True)
-        .order_by('-likes')[:3]
-        .values_list('id', flat=True)
-    )
-    Piano.objects.filter(aprovado=True).update(destaque=False)
-    Piano.objects.filter(id__in=top_ids, likes__gt=0).update(destaque=True)
+        top_ids = list(
+            Piano.objects.filter(aprovado=True, likes__gt=0)
+            .order_by('-likes', '-data_cadastro')
+            .values_list('id', flat=True)[:3]
+        )
+        Piano.objects.filter(aprovado=True, destaque=True).exclude(id__in=top_ids).update(destaque=False)
+        Piano.objects.filter(id__in=top_ids, destaque=False).update(destaque=True)
 
     return JsonResponse({
         'likes': piano.likes,
+        'dislikes': piano.dislikes,
         'voto_atual': voto_atual,
     })
 
 
 @require_POST
+@ratelimit(key='ip', rate='20/h', method='POST', block=True)
 def avaliar_piano(request, piano_id):
-    piano = get_object_or_404(Piano, id=piano_id, aprovado=True)
     session_key = f'estrelas_piano_{piano_id}'
 
-    # Só permite uma avaliação por sessão
     if request.session.get(session_key):
         return JsonResponse({'erro': 'Você já avaliou este piano.'}, status=400)
 
@@ -156,13 +172,17 @@ def avaliar_piano(request, piano_id):
     except (ValueError, TypeError):
         return JsonResponse({'erro': 'Avaliação inválida.'}, status=400)
 
-    total = piano.total_avaliacoes
-    media = piano.estrelas
-    nova_media = ((media * total) + estrelas) / (total + 1)
-
-    piano.estrelas = round(nova_media, 2)
-    piano.total_avaliacoes = total + 1
-    piano.save()
+    with transaction.atomic():
+        piano = get_object_or_404(
+            Piano.objects.select_for_update(),
+            id=piano_id,
+            aprovado=True,
+        )
+        total = piano.total_avaliacoes
+        nova_media = ((piano.estrelas * total) + estrelas) / (total + 1)
+        piano.estrelas = round(nova_media, 2)
+        piano.total_avaliacoes = total + 1
+        piano.save(update_fields=['estrelas', 'total_avaliacoes'])
 
     request.session[session_key] = estrelas
 
@@ -171,3 +191,10 @@ def avaliar_piano(request, piano_id):
         'total_avaliacoes': piano.total_avaliacoes,
         'minha_avaliacao': estrelas,
     })
+
+
+def permission_denied(request, exception):
+    limite_excedido = isinstance(exception, Ratelimited)
+    return render(request, 'pianos/403.html', {
+        'limite_excedido': limite_excedido,
+    }, status=429 if limite_excedido else 403)

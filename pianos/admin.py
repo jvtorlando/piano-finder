@@ -6,19 +6,31 @@ from .forms_admin import PianoAdminForm
 
 class PianoAdmin(admin.ModelAdmin):
     form = PianoAdminForm
-    list_display = ('nome_local', 'cidade', 'estado', 'aprovado', 'esta_funcionando', 'data_cadastro', 'thumb')
-    list_filter = ('aprovado', 'estado', 'esta_funcionando')
+    list_display = (
+        'nome_local', 'cidade', 'estado', 'tipo', 'aprovado',
+        'esta_funcionando', 'destaque', 'likes', 'data_cadastro', 'thumb',
+    )
+    list_filter = ('aprovado', 'estado', 'tipo', 'esta_funcionando', 'destaque')
     list_editable = ('aprovado',)
     search_fields = ('nome_local', 'cidade', 'endereco')
     actions = ['aprovar_pianos', 'reprovar_pianos', 'deletar_pianos']
-    readonly_fields = ('foto_url', 'preview_foto')
+    readonly_fields = (
+        'foto_url', 'foto_url_2', 'foto_url_3', 'preview_fotos',
+        'likes', 'dislikes', 'estrelas', 'total_avaliacoes', 'data_cadastro',
+    )
 
     fieldsets = (
         ('Informações', {
-            'fields': ('nome_local', 'endereco', 'cidade', 'estado', 'esta_funcionando', 'aprovado', 'descricao')
+            'fields': ('nome_local', 'endereco', 'cidade', 'estado', 'tipo', 'descricao')
         }),
-        ('Foto', {
-            'fields': ('upload_foto', 'foto_url', 'preview_foto')
+        ('Publicação', {
+            'fields': ('esta_funcionando', 'aprovado', 'destaque', 'ordem', 'data_cadastro')
+        }),
+        ('Fotos', {
+            'fields': ('upload_foto', 'foto_url', 'foto_url_2', 'foto_url_3', 'preview_fotos')
+        }),
+        ('Avaliações', {
+            'fields': ('likes', 'dislikes', 'estrelas', 'total_avaliacoes')
         }),
     )
 
@@ -28,11 +40,15 @@ class PianoAdmin(admin.ModelAdmin):
         return '—'
     thumb.short_description = 'Foto'
 
-    def preview_foto(self, obj):
-        if obj.foto_url:
-            return format_html('<img src="{}" style="max-width:300px;border-radius:6px;">', obj.foto_url)
+    def preview_fotos(self, obj):
+        if obj.fotos:
+            imagens = ''.join(
+                '<img src="{}" style="width:180px;height:120px;object-fit:cover;border-radius:6px;margin:0 8px 8px 0;">'
+                for _ in obj.fotos
+            )
+            return format_html(imagens, *obj.fotos)
         return '—'
-    preview_foto.short_description = 'Preview'
+    preview_fotos.short_description = 'Preview'
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
