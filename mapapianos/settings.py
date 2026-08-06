@@ -1,5 +1,9 @@
 from pathlib import Path
 import os
+
+import cloudinary
+import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,13 +18,19 @@ def env_bool(name, default=False):
     return value.strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'chave-local-insegura-mude-no-env')
-DEBUG = env_bool('DEBUG', default=True)
+DEBUG = env_bool('DEBUG', default=False)
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-local-development-only'
+    else:
+        raise ImproperlyConfigured('SECRET_KEY is required when DEBUG is False.')
+
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
         'ALLOWED_HOSTS',
-        '127.0.0.1,localhost,.vercel.app',
+        '127.0.0.1,localhost,.vercel.app,pianofinder.com.br,www.pianofinder.com.br',
     ).split(',')
     if host.strip()
 ]
@@ -73,14 +83,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mapapianos.wsgi.application'
 
-import dj_database_url
-
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
     )
 }
+
+if not DEBUG and not os.environ.get('DATABASE_URL'):
+    raise ImproperlyConfigured('DATABASE_URL is required when DEBUG is False.')
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -106,22 +117,36 @@ MEDIA_ROOT = BASE_DIR / 'media'  # necessário mesmo usando Cloudinary
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ── Cloudinary ──────────────────────────────────────────────────────────────
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
-
-cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    api_key=os.environ.get('CLOUDINARY_API_KEY'),
-    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
-)
-
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
     'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
 }
-CLOUDINARY_UPLOAD_PRESET = os.environ.get('CLOUDINARY_UPLOAD_PRESET', 'pianos_unsigned')
+CLOUDINARY_UPLOAD_PRESET = os.environ.get(
+    'CLOUDINARY_UPLOAD_PRESET',
+    'pianos_unsigned' if DEBUG else '',
+)
+
+if not DEBUG:
+    required_cloudinary = {
+        'CLOUDINARY_CLOUD_NAME': CLOUDINARY_STORAGE['CLOUD_NAME'],
+        'CLOUDINARY_API_KEY': CLOUDINARY_STORAGE['API_KEY'],
+        'CLOUDINARY_API_SECRET': CLOUDINARY_STORAGE['API_SECRET'],
+        'CLOUDINARY_UPLOAD_PRESET': CLOUDINARY_UPLOAD_PRESET,
+    }
+    missing_cloudinary = [
+        name for name, value in required_cloudinary.items() if not value
+    ]
+    if missing_cloudinary:
+        raise ImproperlyConfigured(
+            'Missing production settings: ' + ', '.join(missing_cloudinary)
+        )
+
+cloudinary.config(
+    cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=CLOUDINARY_STORAGE['API_SECRET'],
+)
 
 STORAGES = {
     "default": {
