@@ -1,2 +1,19 @@
+[project]
+name = "piano-finder"
+version = "0.1.0"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+    "Django==6.0.7",
+    "cloudinary==1.44.1",
+    "dj-database-url==3.1.2",
+    "django-cloudinary-storage @ git+https://github.com/klis87/django-cloudinary-storage.git@1d45a5b165b33f78c69fcd00842b33bbb312499b",
+    "django-ratelimit==4.1.0",
+    "gunicorn==25.3.0",
+    "psycopg2-binary==2.9.11",
+    "python-dotenv==1.2.2",
+    "tzdata==2025.3",
+    "whitenoise==6.12.0",
+]
+
 [tool.vercel.scripts]
 build = 'if [ "$VERCEL_ENV" = "production" ] && [ -n "$DATABASE_URL" ]; then python manage.py migrate --noinput; fi'
