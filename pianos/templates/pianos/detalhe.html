@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+{% load static %}
 <head>
     <meta property="og:title" content="{{ piano.nome_local }} — Piano Finder">
     <meta property="og:description" content="{{ piano.cidade }}, {{ piano.estado }}{% if piano.descricao %} — {{ piano.descricao|truncatechars:100 }}{% else %} — Piano público disponível para tocar.{% endif %}">
-    <meta property="og:image" content="{% if piano.foto_url %}{{ piano.foto_url }}{% endif %}">
+    <meta property="og:image" content="{% if piano.foto_url %}{{ piano.foto_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.png' %}{% endif %}">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <meta charset="UTF-8">
-    {% load static %}
-    <link rel="icon" type="image/png" href="{% static 'favicon.ico' %}">
+    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ piano.nome_local }} — Piano Finder</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -296,17 +296,17 @@
             Maps
         </a>
 
-        <button class="action-btn action-btn-like {% if request.session|default:'' %}{% endif %}"
-                id="likeBtn" data-id="{{ piano.id }}">
+        <button type="button" class="action-btn action-btn-like {% if voto_atual == 'like' %}liked{% endif %}"
+                id="likeBtn" data-id="{{ piano.id }}" aria-label="Curtir este piano">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="likeIcon">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
             </svg>
             <span class="like-count" id="likeCount">{{ piano.likes }}</span>
         </button>
 
-        <button class="action-btn action-btn-share" onclick="
+        <button type="button" class="action-btn action-btn-share" onclick="
             if(navigator.share){
-                navigator.share({title:'{{ piano.nome_local }}', text:'Achei esse piano público no Piano Finder!', url: window.location.href})
+                navigator.share({title:'{{ piano.nome_local|escapejs }}', text:'Achei esse piano público no Piano Finder!', url: window.location.href})
             } else {
                 navigator.clipboard.writeText(window.location.href);
                 this.querySelector('span').textContent='Copiado!';
@@ -395,13 +395,20 @@
             <input type="text" name="nome" id="id_nome"
                    placeholder="Seu nome (opcional)"
                    autocomplete="new-password"
+                   maxlength="100"
                    value="{{ form.nome.value|default:'' }}">
+            {% if form.nome.errors %}
+            <p style="color:#e08080;font-size:0.78rem;margin-bottom:0.5rem;">{{ form.nome.errors.0 }}</p>
+            {% endif %}
             <label for="id_texto">Comentário</label>
             <textarea name="texto" id="id_texto"
                       placeholder="Escreva seu comentário..."
                       autocomplete="new-password">{{ form.texto.value|default:'' }}</textarea>
             {% if form.texto.errors %}
             <p style="color:#e08080;font-size:0.78rem;margin-bottom:0.5rem;">{{ form.texto.errors.0 }}</p>
+            {% endif %}
+            {% if form.non_field_errors %}
+            <p style="color:#e08080;font-size:0.78rem;margin-bottom:0.5rem;">{{ form.non_field_errors.0 }}</p>
             {% endif %}
             <button type="submit" class="btn-comentario">Enviar comentário</button>
         </form>
@@ -449,9 +456,7 @@
     const countEl = document.getElementById('likeCount');
     const icon = document.getElementById('likeIcon');
 
-    // Checa sessão local
-    const votoKey = 'voto_' + pianoId;
-    const votoAtual = localStorage.getItem(votoKey);
+    const votoAtual = '{{ voto_atual|default:""|escapejs }}';
     if (votoAtual === 'like') {
         btn.classList.add('liked');
         icon.style.fill = '#e05555';
@@ -459,28 +464,34 @@
     }
 
     btn.addEventListener('click', async () => {
-        const res = await fetch(`/piano/${pianoId}/like/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}',
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: 'acao=like'
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        countEl.textContent = data.likes;
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/piano/${pianoId}/like/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'acao=like'
+            });
+            if (!res.ok) throw new Error('Não foi possível registrar o voto.');
+            const data = await res.json();
+            countEl.textContent = data.likes;
 
-        if (data.voto_atual === 'like') {
-            btn.classList.add('liked');
-            icon.style.fill = '#e05555';
-            icon.style.stroke = '#e05555';
-            localStorage.setItem(votoKey, 'like');
-        } else {
-            btn.classList.remove('liked');
-            icon.style.fill = 'none';
-            icon.style.stroke = 'currentColor';
-            localStorage.removeItem(votoKey);
+            if (data.voto_atual === 'like') {
+                btn.classList.add('liked');
+                icon.style.fill = '#e05555';
+                icon.style.stroke = '#e05555';
+            } else {
+                btn.classList.remove('liked');
+                icon.style.fill = 'none';
+                icon.style.stroke = 'currentColor';
+            }
+            btn.removeAttribute('title');
+        } catch (error) {
+            btn.title = error.message;
+        } finally {
+            btn.disabled = false;
         }
     });
 })();
@@ -488,8 +499,7 @@
 // ── ESTRELAS ──
 (function() {
     const pianoId = '{{ piano.id }}';
-    const estrelaKey = 'estrelas_' + pianoId;
-    const jaAvaliou = localStorage.getItem(estrelaKey);
+    const jaAvaliou = '{{ minha_avaliacao|default:"" }}';
     const starsRight = document.getElementById('starsRight');
     const stars = document.querySelectorAll('.star');
 
@@ -515,27 +525,31 @@
         });
         star.addEventListener('click', async () => {
             const val = star.dataset.val;
-            const res = await fetch(`/piano/${pianoId}/avaliar/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `estrelas=${val}`
-            });
-            if (!res.ok) return;
-            const data = await res.json();
-            localStorage.setItem(estrelaKey, val);
+            stars.forEach(s => s.style.pointerEvents = 'none');
+            try {
+                const res = await fetch(`/piano/${pianoId}/avaliar/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `estrelas=${val}`
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.erro || 'Não foi possível registrar a avaliação.');
 
-            // Atualiza display
-            stars.forEach((s, i) => {
-                s.classList.toggle('filled', i < parseInt(val));
-                s.querySelector('path').style.fill = '';
-            });
-            document.querySelector('.stars-avg').textContent = parseFloat(data.estrelas).toFixed(1);
-            document.querySelector('.stars-count').textContent = `(${data.total_avaliacoes})`;
-            starsRight.textContent = 'Você avaliou ' + val + '★';
-            starsRight.className = 'stars-avaliado';
+                stars.forEach((s, i) => {
+                    s.classList.toggle('filled', i < parseInt(val));
+                    s.querySelector('path').style.fill = '';
+                });
+                document.querySelector('.stars-avg').textContent = parseFloat(data.estrelas).toFixed(1);
+                document.querySelector('.stars-count').textContent = `(${data.total_avaliacoes})`;
+                starsRight.textContent = 'Você avaliou ' + val + '★';
+                starsRight.className = 'stars-avaliado';
+            } catch (error) {
+                starsRight.textContent = error.message;
+                stars.forEach(s => s.style.pointerEvents = '');
+            }
         });
     });
 

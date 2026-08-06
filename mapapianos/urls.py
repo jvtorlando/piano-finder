@@ -4,6 +4,8 @@ from pianos import views
 from django.conf import settings
 from django.conf.urls.static import static
 
+handler403 = 'pianos.views.permission_denied'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.lista_pianos, name='home'),

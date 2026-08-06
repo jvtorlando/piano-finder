@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+{% load static %}
 <head>
     <meta name="description" content="Encontre pianos públicos para tocar em todo o Brasil. Cultura e música ao alcance de todos.">
     <meta property="og:title" content="Piano Finder — Pianos Públicos no Brasil">
     <meta property="og:description" content="Encontre pianos públicos para tocar em todo o Brasil.">
-    <meta property="og:image" content="https://res.cloudinary.com/SEU_CLOUD/image/upload/SUA_IMAGEM_CAPA.jpg">
-    <meta property="og:url" content="https://seudominio.com">
+    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.png' %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-        <meta charset="UTF-8">
-    {% load static %}
-    <link rel="icon" type="image/png" href="{% static 'favicon.ico' %}">
+    <meta name="twitter:card" content="summary">
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Piano Finder — Pianos Públicos no Brasil</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -532,7 +532,7 @@
 
 
 <a href="{% url 'adicionar_piano' %}" class="fab" aria-label="Adicionar piano">＋</a>
-<footer>Piano Finder — Cultura, Musical e Lazer ao alcance de todos · By João Orlando <br>© 2025 Piano Finder</footer>
+<footer>Piano Finder — Cultura, Música e Lazer ao alcance de todos · By João Orlando <br>© {% now "Y" %} Piano Finder</footer>
 
 <!-- OVERLAY -->
 <div class="filter-overlay" id="filterOverlay"></div>
