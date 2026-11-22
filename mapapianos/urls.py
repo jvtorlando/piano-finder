@@ -9,6 +9,7 @@ handler403 = 'pianos.views.permission_denied'
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.lista_pianos, name='home'),
+    path('mapa/', views.mapa_pianos, name='mapa'),
     path('adicionar/', views.adicionar_piano, name='adicionar_piano'),
     path('piano/<int:piano_id>/', views.detalhe_piano, name='detalhe_piano'),
     path('piano/<int:piano_id>/like/', views.like_piano, name='like_piano'),

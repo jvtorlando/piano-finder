@@ -1,0 +1,153 @@
+/* Layout do painel inicial do admin. As cores vêm das variáveis do Unfold,
+   então o painel acompanha os temas claro e escuro automaticamente. */
+
+.pf-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.pf-indicadores {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.pf-indicador {
+    align-items: center;
+    display: flex;
+    gap: 16px;
+}
+
+.pf-indicador__icone {
+    align-items: center;
+    background: color-mix(in oklch, var(--color-primary-500) 15%, transparent);
+    border-radius: 10px;
+    color: var(--color-primary-700);
+    display: flex;
+    flex-shrink: 0;
+    font-size: 24px;
+    height: 48px;
+    justify-content: center;
+    width: 48px;
+}
+
+.dark .pf-indicador__icone {
+    color: var(--color-primary-400);
+}
+
+.pf-indicador--alerta .pf-indicador__icone {
+    background: var(--color-primary-500);
+    color: var(--color-base-950);
+}
+
+.pf-indicador__valor {
+    font-size: 28px;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.pf-colunas {
+    display: grid;
+    gap: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+}
+
+.pf-fila {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: -8px 0;
+    padding: 0;
+}
+
+.pf-fila__item {
+    align-items: center;
+    border-bottom: 1px solid var(--color-base-200);
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+}
+
+.dark .pf-fila__item {
+    border-color: var(--color-base-800);
+}
+
+.pf-fila__item:last-child {
+    border-bottom: 0;
+}
+
+.pf-fila__foto {
+    aspect-ratio: 16 / 10;
+    background: var(--color-base-100);
+    border-radius: 6px;
+    flex-shrink: 0;
+    object-fit: cover;
+    width: 64px;
+}
+
+.dark .pf-fila__foto {
+    background: var(--color-base-800);
+}
+
+.pf-fila__foto--vazia {
+    align-items: center;
+    color: var(--color-base-400);
+    display: flex;
+    justify-content: center;
+}
+
+.pf-fila__texto {
+    flex: 1;
+    min-width: 0;
+}
+
+.pf-fila__titulo {
+    display: block;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pf-fila__meta {
+    color: var(--color-base-500);
+    display: block;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pf-vazio {
+    align-items: center;
+    color: var(--color-base-500);
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.pf-barras {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.pf-ranking {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.pf-ranking li {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+}
+
+.pf-ranking strong {
+    font-variant-numeric: tabular-nums;
+}

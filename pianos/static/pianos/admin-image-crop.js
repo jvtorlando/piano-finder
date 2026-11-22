@@ -7,13 +7,25 @@
     const OUTPUT_HEIGHT = 1000;
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+    function fileWrapper(input) {
+        return input.closest('.border') || input;
+    }
+
+    function showFileName(input, name) {
+        const label = fileWrapper(input).querySelector('input[type="text"][disabled]');
+        if (label) label.value = name;
+    }
+
     function createStatus(input) {
         const status = document.createElement('div');
         status.className = 'piano-image-crop-status';
         status.setAttribute('role', 'status');
         status.setAttribute('aria-live', 'polite');
         status.setAttribute('aria-atomic', 'true');
-        input.insertAdjacentElement('afterend', status);
+        status.style.marginTop = '8px';
+        // No Unfold o input real fica escondido dentro de uma moldura com borda;
+        // a mensagem precisa aparecer depois da moldura para ficar visível.
+        fileWrapper(input).insertAdjacentElement('afterend', status);
         input.setAttribute('aria-describedby', [
             input.getAttribute('aria-describedby'),
             status.id || (status.id = `${input.id || 'piano-image'}-crop-status`),
@@ -119,6 +131,7 @@
                 }
 
                 replaceSelectedFile(input, croppedResult, originalFile);
+                showFileName(input, input.files[0].name);
                 setStatus('Foto ajustada em 16:10 e pronta para ser salva.', false);
                 input.dispatchEvent(new CustomEvent('piano:image-cropped', {
                     bubbles: true,

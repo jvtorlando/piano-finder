@@ -8,6 +8,18 @@ TIPO_PIANO_CHOICES = [
     ('hibrido', 'Híbrido'),
 ]
 
+# Fonte única das UFs: filtros da lista, validação do formulário e admin usam esta lista.
+ESTADOS = [
+    ('AC', 'Acre'), ('AL', 'Alagoas'), ('AP', 'Amapá'), ('AM', 'Amazonas'),
+    ('BA', 'Bahia'), ('CE', 'Ceará'), ('DF', 'Distrito Federal'), ('ES', 'Espírito Santo'),
+    ('GO', 'Goiás'), ('MA', 'Maranhão'), ('MT', 'Mato Grosso'), ('MS', 'Mato Grosso do Sul'),
+    ('MG', 'Minas Gerais'), ('PA', 'Pará'), ('PB', 'Paraíba'), ('PR', 'Paraná'),
+    ('PE', 'Pernambuco'), ('PI', 'Piauí'), ('RJ', 'Rio de Janeiro'), ('RN', 'Rio Grande do Norte'),
+    ('RS', 'Rio Grande do Sul'), ('RO', 'Rondônia'), ('RR', 'Roraima'), ('SC', 'Santa Catarina'),
+    ('SP', 'São Paulo'), ('SE', 'Sergipe'), ('TO', 'Tocantins'),
+]
+UFS = {uf for uf, _ in ESTADOS}
+
 class Piano(models.Model):
     nome_local = models.CharField(max_length=100)
     endereco = models.CharField(max_length=200)
@@ -20,6 +32,11 @@ class Piano(models.Model):
     foto_url_2 = models.URLField(max_length=500, blank=True, null=True)
     foto_url_3 = models.URLField(max_length=500, blank=True, null=True)
     descricao = models.TextField(blank=True, null=True, verbose_name="Descrição")
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, blank=True, null=True,
+        help_text='Preenchida automaticamente a partir do endereço ao salvar no admin.',
+    )
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, blank=True, null=True)
     ordem = models.PositiveIntegerField(default=0, verbose_name="Ordem")
     likes = models.PositiveIntegerField(default=0, verbose_name="Likes")
     dislikes = models.PositiveIntegerField(default=0, verbose_name="Dislikes")
@@ -42,6 +59,10 @@ class Piano(models.Model):
 
     def estrelas_display(self):
         return round(self.estrelas * 2) / 2
+
+    @property
+    def tem_coordenadas(self):
+        return self.latitude is not None and self.longitude is not None
 
 
 class Comentario(models.Model):

@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- redesigned Django Admin with Unfold, using the Piano Finder gold palette, a moderation dashboard with counters and review queues, sidebar shortcuts with pending badges, status labels, photo thumbnails, tabbed piano forms with inline comments, and a one-click "approve and publish" action;
+- public pages rebuilt on a shared `base.html` with Tailwind CSS v4 (via `django-tailwind-cli`), keeping the black, ivory and gold identity: consistent 16:10 cards, native swipe carousels, an accessible filter dialog with removable filter chips, catalog totals, toast messages, and page scripts moved to static files;
+- HTMX (vendored, no CDN): catalog filters update the results in place as options are picked, with clean shareable URLs, and comments are submitted without a page reload;
+- interactive map page (`/mapa/`) built with Leaflet and OpenStreetMap tiles, with a "near me" button that sorts pianos by distance using the browser's location, plus a location map on each piano page;
+- latitude and longitude for pianos, filled automatically from the address through OpenStreetMap Nominatim when an administrator saves a piano, with a bulk "find coordinates" admin action and manual correction;
+- Vercel Web Analytics and Speed Insights on Vercel deployments (cookieless, toggled with `VERCEL_ANALYTICS`);
+- `carregar_exemplos` management command that seeds sample pianos and comments into the local development database.
+
+### Changed
+
+- darker gold palette, hairline rules and outlined buttons, keeping the original Playfair Display and DM Sans fonts;
+- catalog cards keep the original layout (edge to edge, same photo size and type badges) without the "working" check mark or the catalog totals line; only pianos under maintenance get a note;
+- the "Catálogo" menu link scrolls to the catalog instead of reloading the home page;
+- the suggestion form offers the four piano types directly instead of a two-step choice;
+- site copy and README rewritten in plainer language;
+- Brazilian states and piano types now have a single source of truth in `pianos/models.py`;
+- the "how to get there" link uses an encoded Google Maps search URL.
+
+### Fixed
+
+- star rating: after voting the stars jumped back to the old average, the stars showed the visitor's vote while the number showed the average, there were no partial stars, and the number switched from "5,0" to "3.5" after a vote;
+- static JS and CSS URLs now carry the deploy version (`?v=`), so browsers stop using old cached scripts after a release;
+- local setup failing with an unconfigured database when `.env` contains an empty `DATABASE_URL`, as copied from `.env.example`; an empty value now falls back to SQLite.
+
 ## [1.0.0] - 2026-08-06
 
 First formal public release of Piano Finder as a production application and portfolio project.

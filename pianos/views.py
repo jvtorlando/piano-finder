@@ -3,30 +3,51 @@ from django.contrib import messages
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_POST
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 
-from .models import Piano, Comentario
+from .models import ESTADOS, TIPO_PIANO_CHOICES, Comentario, Piano
 from .forms import PianoForm, ComentarioForm
 
-ESTADOS = [
-    ('AC','Acre'), ('AL','Alagoas'), ('AP','Amapá'), ('AM','Amazonas'),
-    ('BA','Bahia'), ('CE','Ceará'), ('DF','Distrito Federal'), ('ES','Espírito Santo'),
-    ('GO','Goiás'), ('MA','Maranhão'), ('MT','Mato Grosso'), ('MS','Mato Grosso do Sul'),
-    ('MG','Minas Gerais'), ('PA','Pará'), ('PB','Paraíba'), ('PR','Paraná'),
-    ('PE','Pernambuco'), ('PI','Piauí'), ('RJ','Rio de Janeiro'), ('RN','Rio Grande do Norte'),
-    ('RS','Rio Grande do Sul'), ('RO','Rondônia'), ('RR','Roraima'), ('SC','Santa Catarina'),
-    ('SP','São Paulo'), ('SE','Sergipe'), ('TO','Tocantins'),
+
+# Tipos oferecidos no cadastro público, com uma dica curta para quem não conhece os nomes.
+# "acustico" (genérico) continua existindo para registros antigos, mas não é oferecido.
+TIPOS_FORMULARIO = [
+    ('armario', 'Armário', 'Vertical, encostado na parede'),
+    ('cauda', 'Cauda', 'Horizontal, com tampa que abre'),
+    ('digital', 'Digital', 'Elétrico, sem cordas'),
+    ('hibrido', 'Híbrido', 'Acústico com recursos digitais'),
 ]
 
-TIPOS = [
-    ('acustico', 'Acústico'),
-    ('cauda', 'Cauda'),
-    ('armario', 'Armário'),
-    ('digital', 'Digital'),
-    ('hibrido', 'Híbrido'),
-]
+
+def _eh_htmx(request):
+    return request.headers.get('HX-Request') == 'true'
+
+
+def _filtros_aplicados(request, estado, cidade, tipo):
+    """Rótulos dos filtros ativos, cada um com a URL da lista sem aquele filtro."""
+    nomes_tipos = dict(TIPO_PIANO_CHOICES)
+    nomes_estados = dict(ESTADOS)
+    filtros = []
+    for chave, valor, rotulo in (
+        ('tipo', tipo, nomes_tipos.get(tipo, tipo)),
+        ('cidade', cidade, cidade),
+        ('estado', estado, nomes_estados.get(estado, estado)),
+    ):
+        if not valor:
+            continue
+        params = request.GET.copy()
+        params.pop(chave, None)
+        consulta = params.urlencode()
+        filtros.append({
+            'rotulo': rotulo,
+            'remover_url': reverse('home') + (f'?{consulta}' if consulta else ''),
+        })
+    return filtros
+
 
 def lista_pianos(request):
     pianos = Piano.objects.filter(aprovado=True).order_by('ordem', '-likes', '-data_cadastro')
@@ -44,14 +65,47 @@ def lista_pianos(request):
 
     filtros_ativos = bool(estado or cidade or tipo)
 
-    return render(request, 'pianos/lista.html', {
+    # Filtros feitos via HTMX recebem só o bloco de resultados, não a página inteira.
+    template = 'pianos/lista.html#resultados' if _eh_htmx(request) else 'pianos/lista.html'
+    resposta = render(request, template, {
         'pianos': pianos,
         'estados': ESTADOS,
-        'tipos': TIPOS,
+        'tipos': TIPO_PIANO_CHOICES,
         'estado_sel': estado,
         'cidade_sel': cidade,
         'tipo_sel': tipo,
         'filtros_ativos': filtros_ativos,
+        'filtros_aplicados': _filtros_aplicados(request, estado, cidade, tipo),
+    })
+    # A mesma URL devolve HTML diferente com e sem HTMX; caches precisam distinguir.
+    patch_vary_headers(resposta, ['HX-Request'])
+    return resposta
+
+
+def mapa_pianos(request):
+    publicados = Piano.objects.filter(aprovado=True)
+    no_mapa = publicados.filter(latitude__isnull=False, longitude__isnull=False).order_by('nome_local')
+    pontos = [
+        {
+            'id': piano.id,
+            'nome': piano.nome_local,
+            'endereco': piano.endereco,
+            'cidade': piano.cidade,
+            'estado': piano.estado,
+            'tipo': piano.get_tipo_display(),
+            'funcionando': piano.esta_funcionando,
+            'lat': float(piano.latitude),
+            'lng': float(piano.longitude),
+            'foto': piano.foto_url or '',
+            'likes': piano.likes,
+            'estrelas': piano.estrelas if piano.total_avaliacoes else None,
+            'url': reverse('detalhe_piano', args=[piano.id]),
+        }
+        for piano in no_mapa
+    ]
+    return render(request, 'pianos/mapa.html', {
+        'pontos': pontos,
+        'fora_do_mapa': publicados.count() - len(pontos),
     })
 
 
@@ -65,12 +119,16 @@ def adicionar_piano(request):
             piano.foto_url_2 = form.cleaned_data.get('foto_url_2') or None
             piano.foto_url_3 = form.cleaned_data.get('foto_url_3') or None
             piano.save()
-            messages.success(request, 'Sua sugestão foi enviada! Ela será analisada e publicada em breve.')
+            messages.success(request, 'Recebemos sua indicação. O piano entra no catálogo depois de revisado.')
             return redirect('home')
     else:
         form = PianoForm()
+
+    tipo_atual = form['tipo'].value() if form.is_bound else ''
     return render(request, 'pianos/adicionar.html', {
         'form': form,
+        'tipos_formulario': TIPOS_FORMULARIO,
+        'tipo_inicial': tipo_atual if tipo_atual in dict(TIPO_PIANO_CHOICES) else 'armario',
         'cloudinary_cloud_name': settings.CLOUDINARY_STORAGE.get('CLOUD_NAME', ''),
         'cloudinary_upload_preset': settings.CLOUDINARY_UPLOAD_PRESET,
     })
@@ -84,11 +142,21 @@ def detalhe_piano(request, piano_id):
 
     if request.method == 'POST':
         form = ComentarioForm(request.POST)
-        if form.is_valid():
+        enviado = form.is_valid()
+        if enviado:
             comentario = form.save(commit=False)
             comentario.piano = piano
             comentario.save()
-            messages.success(request, 'Comentário enviado! Será publicado após moderação.')
+
+        if _eh_htmx(request):
+            # O HTMX troca só o formulário: limpo e com aviso se deu certo, com erros se não.
+            return render(request, 'pianos/detalhe.html#form_comentario', {
+                'piano': piano,
+                'form': ComentarioForm() if enviado else form,
+                'comentario_enviado': enviado,
+            })
+        if enviado:
+            messages.success(request, 'Comentário recebido. Ele aparece na página assim que for revisado.')
             return redirect('detalhe_piano', piano_id=piano_id)
 
     return render(request, 'pianos/detalhe.html', {

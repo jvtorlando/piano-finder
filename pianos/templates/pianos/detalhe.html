@@ -1,664 +1,208 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends "pianos/base.html" %}
 {% load static %}
-<head>
-    <meta property="og:title" content="{{ piano.nome_local }} — Piano Finder">
-    <meta property="og:description" content="{{ piano.cidade }}, {{ piano.estado }}{% if piano.descricao %} — {{ piano.descricao|truncatechars:100 }}{% else %} — Piano público disponível para tocar.{% endif %}">
-    <meta property="og:image" content="{% if piano.foto_url %}{{ piano.foto_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.png' %}{% endif %}">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ piano.nome_local }} — Piano Finder</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --black: #0d0d0d; --ebony: #1a1a1a; --ivory: #f5f0e8;
-            --gold: #c9a84c; --gold-lt: #e8c96a; --muted: #888; --border: #2a2a2a;
-        }
-        html { overflow-x: hidden; }
-        body { background: var(--black); color: var(--ivory); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; overflow-x: hidden; }
 
-        /* ── NAV ── */
-        nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.9rem 1.2rem;
-            background: rgba(13,13,13,0.92); backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-        }
-        .nav-brand { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--ivory); text-decoration: none; }
-        .nav-brand em { color: var(--gold); font-style: italic; }
-        .nav-back { font-size: 0.8rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
-        .nav-back:hover { color: var(--ivory); }
+{% block title %}{{ piano.nome_local }} · Piano Finder{% endblock %}
+{% block description %}Piano {{ piano.get_tipo_display|lower }} em {{ piano.cidade }}/{{ piano.estado }}: {{ piano.endereco }}.{% endblock %}
+{% block og_title %}{{ piano.nome_local }} · Piano Finder{% endblock %}
+{% block og_description %}{{ piano.cidade }}, {{ piano.estado }}.{% if piano.descricao %} {{ piano.descricao|truncatechars:100 }}{% else %} Piano público para tocar.{% endif %}{% endblock %}
+{% block og_image %}{% if piano.foto_url %}{{ piano.foto_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
+{% block twitter_card %}summary_large_image{% endblock %}
 
-        /* ── HERO CARROSSEL ── */
-        .hero {
-            margin-top: 52px; width: 100%;
-            height: 60vw; min-height: 260px; max-height: 520px;
-            position: relative; overflow: hidden; background: var(--ebony);
-        }
-        .hero-track {
-            display: flex; height: 100%;
-            transition: transform 0.45s ease; will-change: transform;
-        }
-        .hero-slide { min-width: 100%; height: 100%; flex-shrink: 0; }
-        .hero-slide img {
-            width: 100%; height: 100%; object-fit: cover;
-            filter: brightness(0.75); display: block;
-        }
-        .hero-no-img {
-            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-            background: repeating-linear-gradient(90deg, #111 0px, #111 36px, #0d0d0d 36px, #0d0d0d 40px);
-        }
-        .hero-no-img span { font-size: 6rem; opacity: 0.06; font-family: 'Playfair Display', serif; }
-        .hero::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(to bottom, transparent 35%, rgba(13,13,13,0.95) 100%);
-            pointer-events: none; z-index: 2;
-        }
+{% block head %}
+{% if piano.tem_coordenadas %}<link rel="stylesheet" href="{% static 'pianos/vendor/leaflet/leaflet.css' %}?v={{ static_version }}">{% endif %}
+{% endblock %}
 
-        /* Hero caption */
-        .hero-caption {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 1rem 1.2rem; z-index: 3;
-        }
-        .tag-row { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.4rem; }
-        .tag { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
-        .tag-dot { color: #555; }
-        .hero-caption h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(1.5rem, 5.5vw, 2.8rem);
-            font-weight: 900; line-height: 1.05; color: var(--ivory);
-        }
+{% block nav_actions %}
+    <a href="{% url 'home' %}" class="px-2 py-2 text-[0.78rem] tracking-[0.2em] text-muted uppercase transition hover:text-gold-light">← Catálogo</a>
+    <a href="{% url 'mapa' %}" class="px-2 py-2 text-[0.78rem] tracking-[0.2em] text-muted uppercase transition hover:text-gold-light">Mapa</a>
+{% endblock %}
 
-        /* Hero nav buttons */
-        .hero-btn {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            background: rgba(13,13,13,0.55); border: 1px solid rgba(255,255,255,0.1);
-            color: var(--ivory); width: 34px; height: 34px; border-radius: 50%;
-            font-size: 1rem; cursor: pointer; z-index: 10;
-            display: flex; align-items: center; justify-content: center;
-            transition: background 0.2s;
-        }
-        .hero-btn:hover { background: rgba(201,168,76,0.6); color: var(--black); }
-        .hero-btn.prev { left: 0.8rem; }
-        .hero-btn.next { right: 0.8rem; }
-
-        /* Hero dots */
-        .hero-dots {
-            position: absolute; top: 0.8rem; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 5px; z-index: 10;
-        }
-        .hero-dot {
-            width: 5px; height: 5px; border-radius: 50%;
-            background: rgba(255,255,255,0.3); cursor: pointer;
-            transition: background 0.2s, transform 0.2s;
-        }
-        .hero-dot.active { background: var(--gold); transform: scale(1.4); }
-
-        /* ── CONTENT ── */
-        .content { max-width: 680px; margin: 0 auto; padding: 0 0 6rem; }
-
-        /* ── ACTION BAR ── */
-        .action-bar {
-            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .action-btn {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 4px; padding: 0.9rem 0.5rem;
-            font-family: 'DM Sans', sans-serif; font-size: 0.62rem; font-weight: 500;
-            letter-spacing: 0.06em; text-transform: uppercase;
-            text-decoration: none; cursor: pointer; border: none;
-            transition: background 0.2s; color: var(--muted); background: var(--ebony);
-            border-right: 1px solid var(--border);
-        }
-        .action-btn:last-child { border-right: none; }
-        .action-btn svg { width: 18px; height: 18px; }
-        .action-btn-maps { color: var(--gold); }
-        .action-btn-maps:active { background: rgba(201,168,76,0.1); }
-        .action-btn-share:active { background: #222; }
-
-        /* Like button */
-        .action-btn-like { position: relative; }
-        .action-btn-like.liked { color: #e05555; }
-        .action-btn-like.liked svg { fill: #e05555; stroke: #e05555; }
-        .like-count { font-size: 0.75rem; font-weight: 500; }
-
-        /* ── ESTRELAS ── */
-        .stars-bar {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--border);
-            gap: 1rem;
-        }
-        .stars-left { display: flex; align-items: center; gap: 0.6rem; }
-        .stars-display { display: flex; gap: 2px; }
-        .star {
-            width: 16px; height: 16px; cursor: pointer;
-            transition: transform 0.15s;
-        }
-        .star:hover { transform: scale(1.2); }
-        .star path { fill: #333; transition: fill 0.15s; }
-        .star.filled path { fill: var(--gold); }
-        .star.half path.half-fill { fill: var(--gold); }
-        .stars-avg { font-size: 0.85rem; font-weight: 500; color: var(--ivory); }
-        .stars-count { font-size: 0.65rem; color: var(--muted); }
-        .stars-right { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.05em; }
-        .stars-avaliado { font-size: 0.62rem; color: var(--gold); }
-
-        /* ── INFO PILLS ── */
-        .info-pills {
-            display: flex; gap: 0; border-bottom: 1px solid var(--border);
-        }
-        .info-pill {
-            flex: 1; padding: 0.9rem 0.8rem;
-            border-right: 1px solid var(--border);
-        }
-        .info-pill:last-child { border-right: none; }
-        .pill-label { font-size: 0.48rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
-        .pill-value { font-size: 0.8rem; font-weight: 500; color: var(--ivory); line-height: 1.3; }
-        .pill-value.ok  { color: #7fc987; }
-        .pill-value.off { color: #e08080; }
-
-        /* ── DESCRIÇÃO ── */
-        .descricao-block {
-            padding: 1.1rem 1.2rem; border-bottom: 1px solid var(--border);
-            border-left: 2px solid var(--gold);
-        }
-        .descricao-label { font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
-        .descricao-block p { font-size: 0.88rem; color: var(--muted); line-height: 1.7; }
-
-        /* ── SECTION TITLE ── */
-        .section-title {
-            font-size: 0.55rem; letter-spacing: 0.28em; text-transform: uppercase;
-            color: var(--gold); padding: 1rem 1.2rem 0.7rem;
-        }
-
-        /* ── COMENTÁRIOS ── */
-        .comentario { padding: 0.9rem 1.2rem; border-bottom: 1px solid #111; }
-        .comentario-autor { font-size: 0.75rem; font-weight: 500; color: var(--ivory); margin-bottom: 0.25rem; }
-        .comentario-data { font-size: 0.6rem; color: #444; margin-left: 0.4rem; }
-        .comentario-texto { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
-        .sem-comentarios { font-size: 0.82rem; color: #444; font-style: italic; padding: 0.8rem 1.2rem; }
-
-        /* ── FORM COMENTÁRIO ── */
-        .form-comentario { padding: 0 1.2rem 1.2rem; }
-        .form-comentario label {
-            display: block; font-size: 0.58rem; letter-spacing: 0.15em;
-            text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem;
-        }
-        .form-comentario input,
-        .form-comentario textarea {
-            width: 100%; background: var(--ebony); border: 1px solid var(--border);
-            border-radius: 4px; color: var(--ivory); padding: 0.9rem 1rem;
-            font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 300;
-            outline: none; transition: border-color 0.2s; margin-bottom: 0.8rem;
-            min-height: 52px; -webkit-appearance: none;
-        }
-        .form-comentario input:focus,
-        .form-comentario textarea:focus { border-color: var(--gold); }
-        .form-comentario textarea { resize: vertical; min-height: 90px; }
-        .btn-comentario {
-            width: 100%; background: var(--gold); color: var(--black); border: none;
-            padding: 1rem; font-family: 'DM Sans', sans-serif;
-            font-size: 0.9rem; font-weight: 500; letter-spacing: 0.06em;
-            text-transform: uppercase; border-radius: 4px; cursor: pointer;
-            min-height: 54px;
-        }
-        .btn-comentario:active { background: var(--gold-lt); }
-
-        .alert-success {
-            background: rgba(58,125,68,0.15); border: 1px solid rgba(58,125,68,0.4);
-            color: #7fc987; padding: 0.85rem 1.2rem; font-size: 0.85rem;
-            margin: 0.5rem 1.2rem; border-radius: 4px;
-        }
-
-        /* ── BACK ── */
-        .back-section { padding: 1.2rem; border-top: 1px solid var(--border); margin-top: 1rem; }
-        .back-link { font-size: 0.78rem; color: var(--muted); text-decoration: none; }
-        .back-link:hover { color: var(--ivory); }
-
-        @keyframes zoomIn { from { transform: scale(1.05); } to { transform: scale(1); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-
-        @media (min-width: 600px) {
-            .hero { height: 50vh; max-height: 600px; }
-            .action-btn { padding: 1rem 1.5rem; flex-direction: row; gap: 6px; font-size: 0.72rem; }
-        }
-
-        @media (max-width: 599px) {
-            .hero {
-                height: auto;
-                min-height: 0;
-                max-height: none;
-                aspect-ratio: 16 / 10;
-                background: #0d0d0d;
-            }
-            .hero-slide {
-                position: relative;
-                display: block;
-                overflow: hidden;
-            }
-            .hero-slide img {
-                position: absolute;
-                inset: 0;
-                width: 100%;
-                height: 100%;
-                max-width: none;
-                max-height: none;
-                object-fit: cover;
-                object-position: center;
-                flex: none;
-            }
-            .hero::after {
-                background: linear-gradient(to bottom, transparent 50%, rgba(13,13,13,0.95) 95%);
-            }
-        }
-    </style>
-</head>
-<body>
-
-<nav>
-    <a href="{% url 'home' %}" class="nav-brand">Piano<em>Finder</em></a>
-    <a href="{% url 'home' %}" class="nav-back">← Voltar</a>
-</nav>
-
-<!-- HERO COM CARROSSEL -->
+{% block content %}
 {% with fotos=piano.fotos %}
-<div class="hero" id="hero">
-    {% if fotos %}
-        <div class="hero-track" id="heroTrack">
-            {% for foto in fotos %}
-            <div class="hero-slide">
-                <img src="{{ foto }}" alt="{{ piano.nome_local }}">
-            </div>
-            {% endfor %}
-        </div>
-        {% if fotos|length > 1 %}
-        <button class="hero-btn prev" id="heroPrev">‹</button>
-        <button class="hero-btn next" id="heroNext">›</button>
-        <div class="hero-dots" id="heroDots">
-            {% for foto in fotos %}
-            <div class="hero-dot {% if forloop.first %}active{% endif %}" data-idx="{{ forloop.counter0 }}"></div>
-            {% endfor %}
-        </div>
-        {% endif %}
-    {% else %}
-        <div class="hero-no-img"><span>♩</span></div>
-    {% endif %}
 
-    <div class="hero-caption">
-        <div class="tag-row">
-            <span class="tag">{{ piano.cidade }}</span>
-            <span class="tag-dot">·</span>
-            <span class="tag">{{ piano.estado }}</span>
-            {% if piano.tipo %}
-            <span class="tag-dot">·</span>
-            <span class="tag">{{ piano.get_tipo_display }}</span>
-            {% endif %}
-            {% if piano.destaque %}
-            <span class="tag-dot">·</span>
-            <span class="tag" style="color:#fff;background:var(--gold);padding:2px 6px;border-radius:2px;">★ Destaque</span>
-            {% endif %}
-        </div>
-        <h1>{{ piano.nome_local }}</h1>
-    </div>
-</div>
-{% endwith %}
-
-<div class="content">
-
-    <!-- ACTION BAR -->
-    <div class="action-bar">
-        <a href="https://www.google.com/maps/search/{{ piano.nome_local }}+{{ piano.endereco }}+{{ piano.cidade }}"
-           target="_blank" rel="noopener" class="action-btn action-btn-maps">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                <circle cx="12" cy="10" r="3"/>
-            </svg>
-            Maps
-        </a>
-
-        <button type="button" class="action-btn action-btn-like {% if voto_atual == 'like' %}liked{% endif %}"
-                id="likeBtn" data-id="{{ piano.id }}" aria-label="Curtir este piano">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="likeIcon">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            <span class="like-count" id="likeCount">{{ piano.likes }}</span>
-        </button>
-
-        <button type="button" class="action-btn action-btn-share" onclick="
-            if(navigator.share){
-                navigator.share({title:'{{ piano.nome_local|escapejs }}', text:'Achei esse piano público no Piano Finder!', url: window.location.href})
-            } else {
-                navigator.clipboard.writeText(window.location.href);
-                this.querySelector('span').textContent='Copiado!';
-                setTimeout(()=>this.querySelector('span').textContent='Compartilhar',2000);
-            }
-        ">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
-            </svg>
-            <span>Compartilhar</span>
-        </button>
-    </div>
-
-    <!-- ESTRELAS -->
-    <div class="stars-bar">
-        <div class="stars-left">
-            <div class="stars-display" id="starsDisplay">
-                {% for i in "12345" %}
-                <svg class="star {% if piano.estrelas >= forloop.counter %}filled{% endif %}"
-                     viewBox="0 0 24 24" data-val="{{ forloop.counter }}" id="star{{ forloop.counter }}">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
+{# ── Fotos ────────────────────────────────────────────────────────────── #}
+<section class="relative" aria-label="Fotos do piano">
+    <div class="relative mx-auto aspect-[16/10] max-h-[72dvh] w-full max-w-6xl overflow-hidden bg-ebony sm:mt-8 sm:outline sm:outline-1 sm:outline-offset-[6px] sm:outline-gold/25">
+        {% if fotos %}
+            <div id="fotos-piano" class="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-carousel>
+                {% for foto in fotos %}
+                    <img src="{{ foto }}" alt="{{ piano.nome_local }}, foto {{ forloop.counter }}" class="h-full w-full shrink-0 snap-center object-cover brightness-[0.8] sepia-[0.12]" width="1600" height="1000" {% if not forloop.first %}loading="lazy"{% endif %}>
                 {% endfor %}
             </div>
-            <span class="stars-avg">{{ piano.estrelas|floatformat:1 }}</span>
-            <span class="stars-count">({{ piano.total_avaliacoes }})</span>
+            {% if fotos|length > 1 %}
+                <button type="button" class="absolute top-1/2 left-4 z-10 grid size-11 -translate-y-1/2 place-items-center border border-gold/40 bg-ink/60 font-display text-2xl text-gold-light backdrop-blur-sm transition hover:bg-gold hover:text-ink" data-carousel-step="fotos-piano" data-direction="-1" aria-label="Foto anterior">‹</button>
+                <button type="button" class="absolute top-1/2 right-4 z-10 grid size-11 -translate-y-1/2 place-items-center border border-gold/40 bg-ink/60 font-display text-2xl text-gold-light backdrop-blur-sm transition hover:bg-gold hover:text-ink" data-carousel-step="fotos-piano" data-direction="1" aria-label="Próxima foto">›</button>
+                <div class="pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 gap-1.5" data-carousel-dots>
+                    {% for foto in fotos %}<span class="size-1.5 rounded-full bg-white/40 transition {% if forloop.first %}scale-125 bg-gold{% endif %}"></span>{% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="flex h-full items-center justify-center bg-[repeating-linear-gradient(90deg,#15120d_0,#15120d_36px,#0d0b08_36px,#0d0b08_40px)]">
+                <span class="font-display text-9xl text-gold/10" aria-hidden="true">♩</span>
+            </div>
+        {% endif %}
+
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-40% to-ink"></div>
+
+        <div class="absolute inset-x-0 bottom-0 z-10 p-6 sm:p-10">
+            <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] tracking-[0.24em] text-gold uppercase">
+                <span>{{ piano.cidade }} · {{ piano.estado }}</span>
+                <span class="text-faint" aria-hidden="true">✦</span>
+                <span class="inline-flex items-center gap-1.5">{% include "pianos/partials/tipo_icone.html" with tipo=piano.tipo classe="size-4" %}{{ piano.get_tipo_display }}</span>
+                {% if piano.destaque %}<span class="bg-gold px-2 py-0.5 text-ink">Destaque</span>{% endif %}
+            </p>
+            <h1 class="mt-3 font-display text-[clamp(2.2rem,6vw,4rem)] leading-[1] font-medium">{{ piano.nome_local }}</h1>
         </div>
-        <span class="stars-right" id="starsRight">
-            {% if piano.total_avaliacoes > 0 %}Toque para avaliar{% else %}Seja o primeiro!{% endif %}
+    </div>
+</section>
+{% endwith %}
+
+<div class="mx-auto max-w-3xl px-4 pb-20 sm:px-6">
+
+    {# ── Ações ── #}
+    <div class="mt-8 grid grid-cols-3 gap-px border border-line bg-line" data-reveal>
+        <a href="https://www.google.com/maps/search/?api=1&amp;query={{ piano.nome_local|urlencode }}%2C%20{{ piano.endereco|urlencode }}%2C%20{{ piano.cidade|urlencode }}%20{{ piano.estado|urlencode }}"
+           target="_blank" rel="noopener" class="flex flex-col items-center justify-center gap-1.5 bg-ebony px-2 py-4 text-[0.72rem] tracking-[0.18em] text-gold-light uppercase transition hover:bg-coal sm:flex-row sm:gap-2">
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Como chegar
+        </a>
+
+        <button type="button"
+                class="group flex flex-col items-center justify-center gap-1.5 bg-ebony px-2 py-4 text-[0.72rem] tracking-[0.18em] text-muted uppercase transition hover:bg-coal hover:text-ivory aria-pressed:text-[#c96b63] sm:flex-row sm:gap-2"
+                data-like-url="{% url 'like_piano' piano.id %}"
+                aria-pressed="{% if voto_atual == 'like' %}true{% else %}false{% endif %}"
+                aria-label="Curtir este piano">
+            <svg viewBox="0 0 24 24" class="size-5 transition group-aria-pressed:fill-current" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span data-like-count>{{ piano.likes }}</span>
+        </button>
+
+        <button type="button"
+                class="flex flex-col items-center justify-center gap-1.5 bg-ebony px-2 py-4 text-[0.72rem] tracking-[0.18em] text-muted uppercase transition hover:bg-coal hover:text-ivory sm:flex-row sm:gap-2"
+                data-share data-share-title="{{ piano.nome_local }}">
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+            <span data-share-label>Compartilhar</span>
+        </button>
+    </div>
+
+    {# ── Avaliação: as estrelas mostram sempre a média; a nota da pessoa aparece no texto. ── #}
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border border-line bg-ebony px-5 py-4"
+         data-reveal data-rating-url="{% url 'avaliar_piano' piano.id %}"
+         data-media="{{ piano.estrelas|stringformat:'.2f' }}" data-minha-avaliacao="{{ minha_avaliacao|default:'' }}">
+        <div class="flex items-center gap-3">
+            <div class="relative" role="radiogroup" aria-label="Avalie de 1 a 5 estrelas">
+                {# Camada apagada, camada dourada recortada na largura da média e botões transparentes por cima. #}
+                <div class="flex gap-1 text-[#3a3329]" aria-hidden="true">
+                    {% for i in "12345" %}<svg viewBox="0 0 24 24" class="size-5 fill-current"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{% endfor %}
+                </div>
+                <div class="absolute inset-y-0 left-0 overflow-hidden transition-[width] duration-200" style="width: {% widthratio piano.estrelas 5 100 %}%" data-rating-fill aria-hidden="true">
+                    <div class="flex w-max gap-1 text-gold">
+                        {% for i in "12345" %}<svg viewBox="0 0 24 24" class="size-5 fill-current"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{% endfor %}
+                    </div>
+                </div>
+                <div class="absolute inset-0 flex gap-1">
+                    {% for i in "12345" %}
+                        <button type="button" class="size-5 cursor-pointer disabled:cursor-default" data-star="{{ forloop.counter }}"
+                                role="radio" aria-checked="{% if minha_avaliacao == forloop.counter %}true{% else %}false{% endif %}"
+                                aria-label="{{ forloop.counter }} estrela{{ forloop.counter|pluralize }}"
+                                {% if minha_avaliacao %}disabled{% endif %}></button>
+                    {% endfor %}
+                </div>
+            </div>
+            <span class="font-display text-2xl leading-none text-ivory" data-rating-avg>{{ piano.estrelas|floatformat:1 }}</span>
+            <span class="text-sm text-muted italic" data-rating-total>({{ piano.total_avaliacoes }} avaliaç{{ piano.total_avaliacoes|pluralize:"ão,ões" }})</span>
+        </div>
+        <span class="text-sm italic {% if minha_avaliacao %}text-gold{% else %}text-muted{% endif %}" data-rating-status>
+            {% if minha_avaliacao %}Sua nota: {{ minha_avaliacao }} de 5{% elif piano.total_avaliacoes %}Toque nas estrelas para dar sua nota{% else %}Ninguém avaliou ainda. Que tal ser o primeiro?{% endif %}
         </span>
     </div>
 
-    <!-- INFO PILLS -->
-    <div class="info-pills">
-        <div class="info-pill">
-            <p class="pill-label">Endereço</p>
-            <p class="pill-value">{{ piano.endereco }}</p>
+    {# ── Informações ── #}
+    <dl class="mt-4 grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3" data-reveal>
+        <div class="col-span-2 bg-ebony px-5 py-4 sm:col-span-1">
+            <dt class="text-[0.66rem] tracking-[0.24em] text-muted uppercase">Endereço</dt>
+            <dd class="mt-1.5 text-lg leading-snug">{{ piano.endereco }}</dd>
         </div>
-        <div class="info-pill">
-            <p class="pill-label">Status</p>
-            <p class="pill-value {% if piano.esta_funcionando %}ok{% else %}off{% endif %}">
-                {% if piano.esta_funcionando %}✓ OK{% else %}✕ Manutenção{% endif %}
-            </p>
+        <div class="bg-ebony px-5 py-4">
+            <dt class="text-[0.66rem] tracking-[0.24em] text-muted uppercase">Situação</dt>
+            <dd class="mt-1.5 text-lg leading-snug {% if piano.esta_funcionando %}text-ok{% else %}text-danger{% endif %}">
+                {% if piano.esta_funcionando %}Funcionando{% else %}Em manutenção{% endif %}
+            </dd>
         </div>
-        <div class="info-pill">
-            <p class="pill-label">Cadastro</p>
-            <p class="pill-value">{{ piano.data_cadastro|date:"d/m/Y" }}</p>
+        <div class="bg-ebony px-5 py-4">
+            <dt class="text-[0.66rem] tracking-[0.24em] text-muted uppercase">No catálogo desde</dt>
+            <dd class="mt-1.5 text-lg leading-snug">{{ piano.data_cadastro|date:"d/m/Y" }}</dd>
         </div>
+    </dl>
+
+    {% if piano.tem_coordenadas %}
+    <div class="mt-4 border border-line" data-reveal>
+        <div id="mapa-piano" class="aspect-[16/9] w-full bg-ebony sm:aspect-[21/9]"
+             data-lat="{{ piano.latitude|stringformat:'s' }}" data-lng="{{ piano.longitude|stringformat:'s' }}" data-nome="{{ piano.nome_local }}"
+             role="region" aria-label="Localização de {{ piano.nome_local }} no mapa"></div>
+        <a href="{% url 'mapa' %}?piano={{ piano.id }}" class="flex items-center justify-between border-t border-line bg-ebony px-5 py-3.5 text-[0.72rem] tracking-[0.2em] text-muted uppercase transition hover:text-gold-light">
+            Ver outros pianos por perto <span aria-hidden="true">→</span>
+        </a>
     </div>
+    {% endif %}
 
     {% if piano.descricao %}
-    <div class="descricao-block">
-        <p class="descricao-label">Sobre este piano</p>
-        <p>{{ piano.descricao }}</p>
-    </div>
+    <figure class="mt-10 text-center" data-reveal>
+        <blockquote class="mx-auto max-w-xl font-display text-2xl leading-snug text-parchment italic">{{ piano.descricao|linebreaksbr }}</blockquote>
+    </figure>
     {% endif %}
 
-    <!-- COMENTÁRIOS -->
-    <p class="section-title">Comentários</p>
+    {# ── Comentários ── #}
+    <section class="mt-14" aria-labelledby="titulo-comentarios">
+        <h2 id="titulo-comentarios" class="section-title">Comentários{% if comentarios %} ({{ comentarios|length }}){% endif %}</h2>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert-success">🎹 {{ message }}</div>
-        {% endfor %}
-    {% endif %}
+        <ul class="mt-4 divide-y divide-line">
+            {% for comentario in comentarios %}
+                <li class="py-5" data-reveal>
+                    <p class="text-[0.72rem] tracking-[0.2em] text-gold uppercase">
+                        {{ comentario.nome|default:"Anônimo" }}
+                        <time class="ml-2 tracking-normal text-faint normal-case italic" datetime="{{ comentario.data|date:'c' }}">{{ comentario.data|date:"d/m/Y" }}</time>
+                    </p>
+                    <p class="mt-1.5 text-lg leading-relaxed text-parchment/90">{{ comentario.texto|linebreaksbr }}</p>
+                </li>
+            {% empty %}
+                <li class="py-5 text-muted italic">Ainda não há comentários. Já tocou nesse piano? Conte como foi.</li>
+            {% endfor %}
+        </ul>
+    </section>
 
-    {% for comentario in comentarios %}
-    <div class="comentario">
-        <p class="comentario-autor">
-            {{ comentario.nome|default:"Anônimo" }}
-            <span class="comentario-data">{{ comentario.data|date:"d/m/Y" }}</span>
-        </p>
-        <p class="comentario-texto">{{ comentario.texto }}</p>
-    </div>
-    {% empty %}
-    <p class="sem-comentarios">Nenhum comentário ainda. Seja o primeiro!</p>
-    {% endfor %}
-
-    <p class="section-title">Deixe um comentário</p>
-    <div class="form-comentario">
-        <form method="POST" action="{% url 'detalhe_piano' piano.id %}">
+    <section class="mt-12" aria-labelledby="titulo-novo-comentario">
+        <h2 id="titulo-novo-comentario" class="section-title">Deixe um comentário</h2>
+        {% partialdef form_comentario inline %}
+        <form method="post" action="{% url 'detalhe_piano' piano.id %}" class="mt-6 space-y-6" id="form-comentario"
+              hx-post="{% url 'detalhe_piano' piano.id %}" hx-target="this" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]">
             {% csrf_token %}
-            <label for="id_nome">Nome (opcional)</label>
-            <input type="text" name="nome" id="id_nome"
-                   placeholder="Seu nome (opcional)"
-                   autocomplete="new-password"
-                   maxlength="100"
-                   value="{{ form.nome.value|default:'' }}">
-            {% if form.nome.errors %}
-            <p style="color:#e08080;font-size:0.78rem;margin-bottom:0.5rem;">{{ form.nome.errors.0 }}</p>
+            {% if comentario_enviado %}
+                <p role="status" class="border border-gold/40 bg-gold/5 px-4 py-3 text-parchment italic">Comentário recebido. Ele aparece aqui assim que for revisado.</p>
             {% endif %}
-            <label for="id_texto">Comentário</label>
-            <textarea name="texto" id="id_texto"
-                      placeholder="Escreva seu comentário..."
-                      autocomplete="new-password">{{ form.texto.value|default:'' }}</textarea>
-            {% if form.texto.errors %}
-            <p style="color:#e08080;font-size:0.78rem;margin-bottom:0.5rem;">{{ form.texto.errors.0 }}</p>
-            {% endif %}
-            {% if form.non_field_errors %}
-            <p style="color:#e08080;font-size:0.78rem;margin-bottom:0.5rem;">{{ form.non_field_errors.0 }}</p>
-            {% endif %}
-            <button type="submit" class="btn-comentario">Enviar comentário</button>
+            <div>
+                <label for="id_nome" class="field-label">Nome (opcional)</label>
+                <input type="text" name="nome" id="id_nome" maxlength="100" placeholder="Como quer assinar" autocomplete="name"
+                       value="{{ form.nome.value|default:'' }}" class="field-input">
+                {% for erro in form.nome.errors %}<p class="mt-1 text-sm text-danger italic">{{ erro }}</p>{% endfor %}
+            </div>
+            <div>
+                <label for="id_texto" class="field-label">Comentário</label>
+                <textarea name="texto" id="id_texto" rows="3" required placeholder="O piano está afinado? Qual o melhor horário para tocar?"
+                          class="field-input min-h-28 resize-y">{{ form.texto.value|default:'' }}</textarea>
+                {% for erro in form.texto.errors %}<p class="mt-1 text-sm text-danger italic">{{ erro }}</p>{% endfor %}
+                {% for erro in form.non_field_errors %}<p class="mt-1 text-sm text-danger italic">{{ erro }}</p>{% endfor %}
+            </div>
+            <button type="submit" class="btn-gold w-full sm:w-auto">Enviar comentário</button>
         </form>
-    </div>
-
-    <div class="back-section">
-        <a href="{% url 'home' %}" class="back-link">← Voltar para todos os pianos</a>
-    </div>
-
+        {% endpartialdef %}
+    </section>
 </div>
+{% endblock %}
 
-<script>
-// ── CARROSSEL HERO ──
-(function() {
-    const track = document.getElementById('heroTrack');
-    if (!track) return;
-    const slides = track.querySelectorAll('.hero-slide');
-    if (slides.length <= 1) return;
-    const dots = document.querySelectorAll('.hero-dot');
-    let current = 0;
-
-    function goTo(idx) {
-        current = (idx + slides.length) % slides.length;
-        track.style.transform = `translateX(-${current * 100}%)`;
-        dots.forEach((d, i) => d.classList.toggle('active', i === current));
-    }
-
-    document.getElementById('heroPrev').addEventListener('click', () => goTo(current - 1));
-    document.getElementById('heroNext').addEventListener('click', () => goTo(current + 1));
-    dots.forEach(d => d.addEventListener('click', () => goTo(+d.dataset.idx)));
-
-    let startX = 0;
-    track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
-    track.addEventListener('touchend', e => {
-        const diff = startX - e.changedTouches[0].clientX;
-        if (Math.abs(diff) > 30) goTo(current + (diff > 0 ? 1 : -1));
-    });
-})();
-
-// ── LIKE ──
-(function() {
-    const btn = document.getElementById('likeBtn');
-    if (!btn) return;
-    const pianoId = btn.dataset.id;
-    const countEl = document.getElementById('likeCount');
-    const icon = document.getElementById('likeIcon');
-
-    const votoAtual = '{{ voto_atual|default:""|escapejs }}';
-    if (votoAtual === 'like') {
-        btn.classList.add('liked');
-        icon.style.fill = '#e05555';
-        icon.style.stroke = '#e05555';
-    }
-
-    btn.addEventListener('click', async () => {
-        btn.disabled = true;
-        try {
-            const res = await fetch(`/piano/${pianoId}/like/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'acao=like'
-            });
-            if (!res.ok) throw new Error('Não foi possível registrar o voto.');
-            const data = await res.json();
-            countEl.textContent = data.likes;
-
-            if (data.voto_atual === 'like') {
-                btn.classList.add('liked');
-                icon.style.fill = '#e05555';
-                icon.style.stroke = '#e05555';
-            } else {
-                btn.classList.remove('liked');
-                icon.style.fill = 'none';
-                icon.style.stroke = 'currentColor';
-            }
-            btn.removeAttribute('title');
-        } catch (error) {
-            btn.title = error.message;
-        } finally {
-            btn.disabled = false;
-        }
-    });
-})();
-
-// ── ESTRELAS ──
-(function() {
-    const pianoId = '{{ piano.id }}';
-    const jaAvaliou = '{{ minha_avaliacao|default:"" }}';
-    const starsRight = document.getElementById('starsRight');
-    const stars = document.querySelectorAll('.star');
-
-    if (jaAvaliou) {
-        starsRight.textContent = 'Você avaliou ' + jaAvaliou + '★';
-        starsRight.className = 'stars-avaliado';
-        // Marca a estrela avaliada
-        stars.forEach((s, i) => {
-            s.classList.toggle('filled', i < parseInt(jaAvaliou));
-        });
-        return; // Não permite reavaliação
-    }
-
-    // Hover
-    stars.forEach((star, idx) => {
-        star.addEventListener('mouseenter', () => {
-            stars.forEach((s, i) => {
-                s.querySelector('path').style.fill = i <= idx ? var_gold() : '#333';
-            });
-        });
-        star.addEventListener('mouseleave', () => {
-            stars.forEach(s => s.querySelector('path').style.fill = '');
-        });
-        star.addEventListener('click', async () => {
-            const val = star.dataset.val;
-            stars.forEach(s => s.style.pointerEvents = 'none');
-            try {
-                const res = await fetch(`/piano/${pianoId}/avaliar/`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': '{{ csrf_token }}',
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `estrelas=${val}`
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.erro || 'Não foi possível registrar a avaliação.');
-
-                stars.forEach((s, i) => {
-                    s.classList.toggle('filled', i < parseInt(val));
-                    s.querySelector('path').style.fill = '';
-                });
-                document.querySelector('.stars-avg').textContent = parseFloat(data.estrelas).toFixed(1);
-                document.querySelector('.stars-count').textContent = `(${data.total_avaliacoes})`;
-                starsRight.textContent = 'Você avaliou ' + val + '★';
-                starsRight.className = 'stars-avaliado';
-            } catch (error) {
-                starsRight.textContent = error.message;
-                stars.forEach(s => s.style.pointerEvents = '');
-            }
-        });
-    });
-
-    function var_gold() { return '#c9a84c'; }
-})();
-</script>
-<style>
-/* ── DETALHE: SCROLL ANIMATIONS ── */
-body { transition: opacity 0.25s ease; }
-body.fade-out { opacity: 0; }
-
-.action-bar,
-.stars-bar,
-.info-pills,
-.descricao-block,
-.section-title,
-.comentario,
-.form-comentario {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-}
-.anim-visible {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-}
-
-/* Teclas hero sobem suavemente */
-nav {
-    animation: slideDown 0.5s ease both;
-}
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-16px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-</style>
-
-<script>
-// ── SCROLL: ELEMENTOS DO DETALHE ──
-const detalheObs = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('anim-visible');
-            detalheObs.unobserve(entry.target);
-        }
-    });
-}, { threshold: 0.07 });
-
-document.querySelectorAll(
-    '.action-bar, .stars-bar, .info-pills, .descricao-block, .section-title, .comentario, .form-comentario'
-).forEach((el, i) => {
-    el.style.transitionDelay = (i * 60) + 'ms';
-    detalheObs.observe(el);
-});
-
-// ── PAGE TRANSITION ──
-document.querySelectorAll('a[href]').forEach(link => {
-    if (link.hostname !== location.hostname) return;
-    if (link.getAttribute('href').startsWith('#')) return;
-    if (link.target === '_blank') return;
-    link.addEventListener('click', e => {
-        e.preventDefault();
-        const href = link.href;
-        document.body.classList.add('fade-out');
-        setTimeout(() => window.location.href = href, 230);
-    });
-});
-
-// ── PAGE TRANSITION ──
-window.addEventListener('pageshow', () => {
-    document.body.style.transition = 'none';
-    document.body.style.opacity = '1';
-    document.body.classList.remove('fade-out');
-    requestAnimationFrame(() => {
-        document.body.style.transition = '';
-    });
-});
-window.addEventListener('pageshow', () => {
-    document.body.classList.remove('fade-out');
-});
-</script>
-</body>
-</html>
+{% block scripts %}
+<script src="{% static 'pianos/js/detalhe.js' %}?v={{ static_version }}" defer></script>
+{% if piano.tem_coordenadas %}
+<script src="{% static 'pianos/vendor/leaflet/leaflet.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'pianos/js/mapa.js' %}?v={{ static_version }}"></script>
+{% endif %}
+{% endblock %}

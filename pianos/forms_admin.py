@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from unfold.widgets import UnfoldAdminImageFieldWidget
 
 from .models import Piano
 
@@ -15,7 +16,7 @@ class PianoAdminForm(forms.ModelForm):
             'Antes do envio, ajuste a foto no formato 16:10. '
             'Imagem JPG, PNG, WEBP ou GIF com até 10 MB; o resultado será convertido em JPG.'
         ),
-        widget=forms.ClearableFileInput(attrs={
+        widget=UnfoldAdminImageFieldWidget(attrs={
             'accept': 'image/*',
             'data-piano-image-cropper': 'true',
         }),

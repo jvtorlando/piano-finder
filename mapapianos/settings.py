@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import time
 
 import cloudinary
 import dj_database_url
@@ -41,6 +42,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 INSTALLED_APPS = [
+    # O Unfold precisa vir antes de django.contrib.admin para sobrescrever os templates.
+    'unfold',
+    'unfold.contrib.filters',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,6 +54,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
     'django_ratelimit',
+    'django_tailwind_cli',
     'pianos',
 ]
 
@@ -76,6 +81,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'pianos.context_processors.site',
             ],
         },
     },
@@ -83,14 +89,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mapapianos.wsgi.application'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+def database_config():
+    # Uma DATABASE_URL vazia (como no .env.example) conta como ausente e usa SQLite.
+    url = os.environ.get('DATABASE_URL', '').strip()
+    return dj_database_url.parse(
+        url or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
     )
+
+
+DATABASES = {
+    'default': database_config(),
 }
 
-if not DEBUG and not os.environ.get('DATABASE_URL'):
+if not DEBUG and not os.environ.get('DATABASE_URL', '').strip():
     raise ImproperlyConfigured('DATABASE_URL is required when DEBUG is False.')
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -109,6 +121,22 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# ── Tailwind ────────────────────────────────────────────────────────────────
+# `python manage.py tailwind build` gera static/css/site.css a partir de
+# assets/tailwind.css. O CSS gerado é commitado, então a Vercel não precisa do
+# binário do Tailwind; rode o build sempre que mudar classes nos templates.
+TAILWIND_CLI_SRC_CSS = 'assets/tailwind.css'
+TAILWIND_CLI_DIST_CSS = 'css/site.css'
+TAILWIND_CLI_VERSION = '4.3.5'
+
+# Versão dos arquivos estáticos (?v=...). Na Vercel é o commit do deploy;
+# localmente muda a cada vez que o servidor reinicia.
+STATIC_VERSION = os.environ.get('VERCEL_GIT_COMMIT_SHA', '')[:10] or str(int(time.time()))
+
+# Vercel Web Analytics / Speed Insights: os scripts /_vercel/... só existem em
+# deploys da Vercel, então só são incluídos quando VERCEL_ENV está definido.
+VERCEL_ANALYTICS = bool(os.environ.get('VERCEL_ENV')) and env_bool('VERCEL_ANALYTICS', default=True)
 
 # ── Mídia ───────────────────────────────────────────────────────────────────
 MEDIA_URL = '/media/'
@@ -195,5 +223,116 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'ERROR',
         },
+    },
+}
+
+# ── Admin (Unfold) ──────────────────────────────────────────────────────────
+from django.templatetags.static import static  # noqa: E402
+from django.urls import reverse  # noqa: E402
+
+UNFOLD = {
+    'SITE_TITLE': 'Piano Finder',
+    'SITE_HEADER': 'Piano Finder',
+    'SITE_SUBHEADER': 'Moderação',
+    'SITE_URL': '/',
+    'SITE_SYMBOL': 'piano',
+    'SITE_FAVICONS': [
+        {'rel': 'icon', 'type': 'image/png', 'href': lambda request: static('favicon.png')},
+    ],
+    'SHOW_HISTORY': True,
+    'SHOW_VIEW_ON_SITE': True,
+    'DASHBOARD_CALLBACK': 'pianos.dashboard.dashboard_callback',
+    'BORDER_RADIUS': '8px',
+    'COLORS': {
+        # Neutros quentes, puxando para o marfim do site.
+        'base': {
+            '50': 'oklch(98.5% .004 80)',
+            '100': 'oklch(96% .008 80)',
+            '200': 'oklch(91.5% .01 80)',
+            '300': 'oklch(85% .012 80)',
+            '400': 'oklch(70% .014 80)',
+            '500': 'oklch(55% .014 80)',
+            '600': 'oklch(45% .012 80)',
+            '700': 'oklch(36% .01 80)',
+            '800': 'oklch(26% .006 80)',
+            '900': 'oklch(20% .004 80)',
+            '950': 'oklch(14% .002 80)',
+        },
+        # Dourado do site (#c9a84c ≈ oklch(74% .117 89.5)).
+        'primary': {
+            '50': 'oklch(98% .02 90)',
+            '100': 'oklch(95% .045 90)',
+            '200': 'oklch(90% .075 90)',
+            '300': 'oklch(84.5% .11 90)',
+            '400': 'oklch(79% .12 90)',
+            '500': 'oklch(74.3% .117 89.5)',
+            '600': 'oklch(64% .11 85)',
+            '700': 'oklch(54% .095 82)',
+            '800': 'oklch(45% .08 80)',
+            '900': 'oklch(38% .065 78)',
+            '950': 'oklch(27% .045 76)',
+        },
+    },
+    'SIDEBAR': {
+        'show_search': True,
+        'show_all_applications': False,
+        'navigation': [
+            {
+                'title': 'Moderação',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Painel',
+                        'icon': 'dashboard',
+                        'link': lambda request: reverse('admin:index'),
+                    },
+                    {
+                        'title': 'Pianos pendentes',
+                        'icon': 'pending_actions',
+                        'link': lambda request: reverse('admin:pianos_piano_changelist') + '?aprovado__exact=0',
+                        'badge': 'pianos.dashboard.badge_pianos_pendentes',
+                    },
+                    {
+                        'title': 'Comentários pendentes',
+                        'icon': 'rate_review',
+                        'link': lambda request: reverse('admin:pianos_comentario_changelist') + '?aprovado__exact=0',
+                        'badge': 'pianos.dashboard.badge_comentarios_pendentes',
+                    },
+                ],
+            },
+            {
+                'title': 'Catálogo',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Todos os pianos',
+                        'icon': 'piano',
+                        'link': lambda request: reverse('admin:pianos_piano_changelist'),
+                    },
+                    {
+                        'title': 'Todos os comentários',
+                        'icon': 'forum',
+                        'link': lambda request: reverse('admin:pianos_comentario_changelist'),
+                    },
+                ],
+            },
+            {
+                'title': 'Acesso',
+                'separator': True,
+                'collapsible': True,
+                'items': [
+                    {
+                        'title': 'Usuários',
+                        'icon': 'person',
+                        'link': lambda request: reverse('admin:auth_user_changelist'),
+                    },
+                    {
+                        'title': 'Grupos',
+                        'icon': 'group',
+                        'link': lambda request: reverse('admin:auth_group_changelist'),
+                    },
+                ],
+            },
+        ],
     },
 }

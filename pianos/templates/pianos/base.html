@@ -1,0 +1,75 @@
+{% load static tailwind_cli %}<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Piano Finder · Pianos públicos no Brasil{% endblock %}</title>
+    <meta name="description" content="{% block description %}Encontre pianos públicos para tocar pelo Brasil e cadastre os que você conhece.{% endblock %}">
+    <meta name="theme-color" content="#0d0b08">
+
+    <meta property="og:site_name" content="Piano Finder">
+    <meta property="og:title" content="{% block og_title %}Piano Finder · Pianos públicos no Brasil{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Encontre pianos públicos para tocar pelo Brasil.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.png' %}{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="{% block twitter_card %}summary{% endblock %}">
+
+    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700;1,900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    {# CSS de bibliotecas (Leaflet, recorte) antes do site.css, para o tema do site prevalecer. #}
+    {% block head %}{% endblock %}
+    {% tailwind_css %}
+</head>
+<body class="flex min-h-dvh flex-col" {% block body_attrs %}{% endblock %}>
+
+<nav class="sticky top-0 z-50 border-b border-gold/15 bg-ink/92 backdrop-blur-md transition-shadow" data-nav>
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 sm:px-8">
+        <a href="{% url 'home' %}" class="shrink-0 font-display text-xl leading-none tracking-wide whitespace-nowrap text-ivory sm:text-2xl">
+            Piano <em class="text-gold-light">Finder</em>
+        </a>
+        <div class="flex items-center gap-0.5 sm:gap-4">
+            {% block nav_actions %}
+                <a href="{% url 'home' %}#resultados" class="hidden px-2 py-2 text-[0.78rem] tracking-[0.2em] text-muted uppercase transition hover:text-gold-light sm:inline-block">Catálogo</a>
+                <a href="{% url 'mapa' %}" class="px-2 py-2 text-[0.72rem] tracking-[0.18em] text-muted uppercase transition hover:text-gold-light sm:text-[0.78rem] sm:tracking-[0.2em]">Mapa</a>
+                <a href="{% url 'adicionar_piano' %}" class="btn-gold ml-1 px-3 py-2 text-[0.68rem] whitespace-nowrap sm:px-4 sm:text-[0.72rem]">Indicar piano</a>
+            {% endblock %}
+        </div>
+    </div>
+</nav>
+
+{% if messages %}
+<div class="pointer-events-none fixed inset-x-0 top-20 z-50 flex flex-col items-center gap-2 px-4" data-toasts>
+    {% for message in messages %}
+    <div role="status" class="pointer-events-auto max-w-md animate-fade-up border border-gold/50 bg-ebony/95 px-5 py-3 text-center text-[0.95rem] text-parchment italic shadow-2xl shadow-black/60 backdrop-blur">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<main class="flex-1">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="border-t border-gold/15 px-4 pt-12 pb-24 text-center sm:pb-12">
+    <p class="font-display text-2xl text-parchment">Piano <em class="text-gold-light">Finder</em></p>
+    <p class="mt-2 text-sm text-muted italic">Pianos de uso livre pelo Brasil, reunidos por quem toca.</p>
+    <p class="mt-6 text-[0.7rem] tracking-[0.25em] text-faint uppercase">Por João Orlando · Desde 2026</p>
+</footer>
+
+<script src="{% static 'pianos/vendor/htmx.min.js' %}?v={{ static_version }}" defer></script>
+<script src="{% static 'pianos/js/site.js' %}?v={{ static_version }}" defer></script>
+{% block scripts %}{% endblock %}
+
+{% if vercel_analytics %}
+{# Vercel Web Analytics (visitas e páginas) e Speed Insights (desempenho real). Não usam cookies. #}
+<script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script>window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
+{% endif %}
+</body>
+</html>
