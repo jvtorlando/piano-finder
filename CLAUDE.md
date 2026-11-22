@@ -64,6 +64,8 @@ Para ter dados no banco local, rode `python manage.py carregar_exemplos`, que s�
 
 Os pedaços reaproveitados usam *template partials* do Django 6: `{% partialdef nome %}` / `{% partial nome %}`. Por exemplo, o card do piano e o bloco `resultados` em `lista.html`. O ícone de cada tipo de piano é `partials/tipo_icone.html`. O JavaScript fica em `pianos/static/pianos/js/`: `site.js` cuida de diálogos, carrossel e animações de entrada (`data-reveal`) e expõe `PianoFinder.init(root)` para reaplicar tudo após trocas de HTML; `detalhe.js` cuida de curtir, avaliar e compartilhar; `adicionar.js`, do recorte e do upload.
 
+**HTMX:** a biblioteca fica em `pianos/static/pianos/vendor/htmx.min.js` (versão 2.0.11, sem CDN). Quando o pedido tem o cabeçalho `HX-Request`, as views devolvem só um partial, e não a página inteira: `lista_pianos` devolve `pianos/lista.html#resultados` (com `Vary: HX-Request`) e o POST de comentário em `detalhe_piano` devolve `pianos/detalhe.html#form_comentario`. Sem HTMX, tudo continua funcionando com formulários e links normais. Curtir e avaliar continuam como `fetch` com respostas JSON (`detalhe.js`). O `site.js` mostra um aviso para erros HTMX, como o 429 do rate limit, tira parâmetros vazios das URLs de filtro e sincroniza a janela de filtros com a URL.
+
 **Listas de domínio:** UFs (`ESTADOS`, `UFS`) e tipos (`TIPO_PIANO_CHOICES`) ficam só em `pianos/models.py`. Views, formulário e filtros importam de lá.
 
 **Migrations de dados:** a `0011` importa os pianos iniciais para a produção e só roda com `VERCEL_ENV=production`. A `0012` limpa esses dados. Elas não fazem nada localmente, então o banco local começa vazio. Use `carregar_exemplos` e `createsuperuser`.

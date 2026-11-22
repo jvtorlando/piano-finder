@@ -99,7 +99,26 @@
         initCarousels(root);
     }
 
-    window.PianoFinder = { init };
+    // Aviso rápido no topo da tela (usado para erros de requisições HTMX).
+    function toast(message, tone = 'erro') {
+        let container = document.querySelector('[data-toasts]');
+        if (!container) {
+            container = document.createElement('div');
+            container.dataset.toasts = '';
+            container.className = 'pointer-events-none fixed inset-x-0 top-20 z-50 flex flex-col items-center gap-2 px-4';
+            document.body.appendChild(container);
+        }
+        const el = document.createElement('div');
+        el.setAttribute('role', tone === 'erro' ? 'alert' : 'status');
+        el.className = tone === 'erro'
+            ? 'pointer-events-auto max-w-md animate-fade-up rounded border border-danger/40 bg-[#2a1414]/95 px-4 py-3 text-sm text-danger shadow-xl shadow-black/40 backdrop-blur'
+            : 'pointer-events-auto max-w-md animate-fade-up rounded border border-ok/40 bg-[#132016]/95 px-4 py-3 text-sm text-ok shadow-xl shadow-black/40 backdrop-blur';
+        el.textContent = message;
+        container.appendChild(el);
+        window.setTimeout(() => el.remove(), 5000);
+    }
+
+    window.PianoFinder = { init, toast };
 
     document.addEventListener('DOMContentLoaded', () => {
         initNav();
@@ -107,5 +126,42 @@
         init(document);
     });
 
-    document.addEventListener('htmx:afterSwap', event => init(event.detail.target));
+    // HTMX: reaplica os comportamentos no HTML novo e trata erros de rede/servidor.
+    document.addEventListener('htmx:load', event => init(event.detail.elt));
+    document.addEventListener('htmx:historyRestore', () => init(document));
+    document.addEventListener('htmx:responseError', event => {
+        const status = event.detail.xhr.status;
+        toast(status === 429
+            ? 'Muitas tentativas em pouco tempo. Aguarde um pouco e tente de novo.'
+            : 'Algo deu errado. Tente novamente em instantes.');
+    });
+    document.addEventListener('htmx:sendError', () => toast('Sem conexão. Verifique sua internet.'));
+
+    // Filtros vazios não entram na URL (?tipo=digital em vez de ?tipo=digital&cidade=&estado=).
+    document.addEventListener('htmx:configRequest', event => {
+        if (event.detail.verb !== 'get') return;
+        const params = event.detail.parameters;
+        for (const key of Object.keys(params)) {
+            if (params[key] === '') delete params[key];
+        }
+    });
+
+    // Depois que a URL muda (ex.: ao remover um filtro pelo "×"), a janela de
+    // filtros passa a refletir os filtros da URL.
+    document.addEventListener('htmx:pushedIntoHistory', () => {
+        const form = document.querySelector('form[data-close-on-submit]');
+        if (!form) return;
+        const params = new URLSearchParams(window.location.search);
+        form.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.checked = radio.value === (params.get(radio.name) || '');
+        });
+        form.querySelectorAll('input[type="search"], input[type="text"]').forEach(input => {
+            input.value = params.get(input.name) || '';
+        });
+    });
+
+    // Formulários com data-close-on-submit fecham a janela (<dialog>) em que estão.
+    document.addEventListener('submit', event => {
+        if (event.target.matches('[data-close-on-submit]')) event.target.closest('dialog')?.close();
+    });
 }());

@@ -34,7 +34,7 @@
 </header>
 
 {% partialdef resultados inline %}
-<section id="resultados" class="mx-auto max-w-7xl pb-16" aria-live="polite">
+<section id="resultados" class="mx-auto max-w-7xl pb-16 transition-opacity [&.htmx-request]:opacity-50" aria-live="polite">
 
     {# ── Barra de filtros ── #}
     <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
@@ -47,7 +47,8 @@
                 Filtrar
             </button>
             {% for filtro in filtros_aplicados %}
-                <a href="{{ filtro.remover_url }}" class="chip chip-on" aria-label="Remover filtro {{ filtro.rotulo }}">
+                <a href="{{ filtro.remover_url }}" class="chip chip-on" aria-label="Remover filtro {{ filtro.rotulo }}"
+                   hx-get="{{ filtro.remover_url }}" hx-target="#resultados" hx-swap="outerHTML" hx-push-url="true">
                     {{ filtro.rotulo }} <span aria-hidden="true">×</span>
                 </a>
             {% endfor %}
@@ -143,7 +144,10 @@
 
 {# ── Filtros (folha inferior no celular, janela no desktop) ───────────── #}
 <dialog id="filtros" class="m-0 mt-auto w-full max-w-none rounded-t-2xl border-t border-line bg-[#0f0f0f] p-0 text-ivory backdrop:bg-black/60 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-md sm:rounded-lg sm:border">
-    <form method="get" action="{% url 'home' %}" class="max-h-[80dvh] overflow-y-auto px-5 pt-4 pb-8 sm:pb-6">
+    <form method="get" action="{% url 'home' %}" class="max-h-[80dvh] overflow-y-auto px-5 pt-4 pb-8 sm:pb-6"
+          hx-get="{% url 'home' %}" hx-target="#resultados" hx-swap="outerHTML" hx-push-url="true"
+          hx-trigger="change, input changed delay:400ms from:#filtro-cidade, submit"
+          data-close-on-submit>
         <div class="mx-auto mb-5 h-1 w-9 rounded-full bg-line sm:hidden" aria-hidden="true"></div>
         <div class="mb-5 flex items-center justify-between">
             <h2 class="text-xs tracking-[0.25em] text-muted uppercase">Filtrar pianos</h2>

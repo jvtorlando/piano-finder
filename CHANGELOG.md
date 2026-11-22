@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - redesigned Django Admin with Unfold, using the Piano Finder gold palette, a moderation dashboard with counters and review queues, sidebar shortcuts with pending badges, status labels, photo thumbnails, tabbed piano forms with inline comments, and a one-click "approve and publish" action;
 - public pages rebuilt on a shared `base.html` with Tailwind CSS v4 (via `django-tailwind-cli`), keeping the black, ivory and gold identity: consistent 16:10 cards, native swipe carousels, an accessible filter dialog with removable filter chips, catalog totals, toast messages, and page scripts moved to static files;
+- HTMX (vendored, no CDN): catalog filters update the results in place as options are picked, with clean shareable URLs, and comments are submitted without a page reload;
 - `carregar_exemplos` management command that seeds sample pianos and comments into the local development database.
 
 ### Changed

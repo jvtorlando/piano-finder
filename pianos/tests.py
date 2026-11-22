@@ -72,6 +72,64 @@ class PianoFinderTests(TestCase):
         self.assertEqual(list(resposta.context['pianos']), [esperado])
         self.assertTrue(resposta.context['filtros_ativos'])
 
+    def test_filtro_via_htmx_devolve_so_os_resultados(self):
+        self.criar_piano(nome_local='Piano de Campinas', cidade='Campinas')
+        self.criar_piano(nome_local='Piano do Rio', cidade='Rio de Janeiro', estado='RJ')
+
+        resposta = self.client.get(
+            reverse('home'), {'cidade': 'campinas'}, headers={'HX-Request': 'true'},
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        conteudo = resposta.content.decode()
+        self.assertTrue(conteudo.lstrip().startswith('<section id="resultados"'))
+        self.assertIn('Piano de Campinas', conteudo)
+        self.assertNotIn('Piano do Rio', conteudo)
+        self.assertNotIn('<html', conteudo)
+        self.assertIn('HX-Request', resposta['Vary'])
+
+    def test_lista_mostra_filtros_removiveis_e_totais(self):
+        self.criar_piano(cidade='Campinas')
+        self.criar_piano(cidade='Santos')
+
+        resposta = self.client.get(reverse('home'), {'tipo': 'armario', 'estado': 'SP'})
+
+        self.assertEqual(resposta.context['total_publicados'], 2)
+        self.assertEqual(resposta.context['total_cidades'], 2)
+        rotulos = {f['rotulo']: f['remover_url'] for f in resposta.context['filtros_aplicados']}
+        self.assertEqual(rotulos['Armário'], reverse('home') + '?estado=SP')
+        self.assertEqual(rotulos['São Paulo'], reverse('home') + '?tipo=armario')
+
+    def test_comentario_via_htmx_devolve_formulario_limpo_com_aviso(self):
+        piano = self.criar_piano()
+
+        resposta = self.client.post(
+            reverse('detalhe_piano', args=[piano.id]),
+            {'nome': 'Ana', 'texto': 'Que piano lindo!'},
+            headers={'HX-Request': 'true'},
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, 'Comentário enviado!')
+        self.assertContains(resposta, 'id="form-comentario"')
+        self.assertNotContains(resposta, 'Que piano lindo!')
+        self.assertNotContains(resposta, '<html')
+        self.assertFalse(Comentario.objects.get().aprovado)
+
+    def test_comentario_invalido_via_htmx_mostra_erro_sem_salvar(self):
+        piano = self.criar_piano()
+
+        resposta = self.client.post(
+            reverse('detalhe_piano', args=[piano.id]),
+            {'nome': 'Ana', 'texto': ''},
+            headers={'HX-Request': 'true'},
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertNotContains(resposta, 'Comentário enviado!')
+        self.assertContains(resposta, 'text-danger')
+        self.assertFalse(Comentario.objects.exists())
+
     def test_detalhe_nao_expoe_piano_pendente(self):
         piano = self.criar_piano(aprovado=False)
 

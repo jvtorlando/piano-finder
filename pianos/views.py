@@ -4,12 +4,17 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.cache import patch_vary_headers
 from django.views.decorators.http import require_POST
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 
 from .models import ESTADOS, TIPO_PIANO_CHOICES, Comentario, Piano
 from .forms import PianoForm, ComentarioForm
+
+
+def _eh_htmx(request):
+    return request.headers.get('HX-Request') == 'true'
 
 
 def _filtros_aplicados(request, estado, cidade, tipo):
@@ -51,7 +56,9 @@ def lista_pianos(request):
 
     filtros_ativos = bool(estado or cidade or tipo)
 
-    return render(request, 'pianos/lista.html', {
+    # Filtros feitos via HTMX recebem só o bloco de resultados, não a página inteira.
+    template = 'pianos/lista.html#resultados' if _eh_htmx(request) else 'pianos/lista.html'
+    resposta = render(request, template, {
         'pianos': pianos,
         'estados': ESTADOS,
         'tipos': TIPO_PIANO_CHOICES,
@@ -63,6 +70,9 @@ def lista_pianos(request):
         'total_publicados': publicados.count(),
         'total_cidades': publicados.values('cidade', 'estado').distinct().count(),
     })
+    # A mesma URL devolve HTML diferente com e sem HTMX; caches precisam distinguir.
+    patch_vary_headers(resposta, ['HX-Request'])
+    return resposta
 
 
 @ratelimit(key='ip', rate='5/h', method='POST', block=True)
@@ -101,10 +111,20 @@ def detalhe_piano(request, piano_id):
 
     if request.method == 'POST':
         form = ComentarioForm(request.POST)
-        if form.is_valid():
+        enviado = form.is_valid()
+        if enviado:
             comentario = form.save(commit=False)
             comentario.piano = piano
             comentario.save()
+
+        if _eh_htmx(request):
+            # O HTMX troca só o formulário: limpo e com aviso se deu certo, com erros se não.
+            return render(request, 'pianos/detalhe.html#form_comentario', {
+                'piano': piano,
+                'form': ComentarioForm() if enviado else form,
+                'comentario_enviado': enviado,
+            })
+        if enviado:
             messages.success(request, 'Comentário enviado! Será publicado após moderação.')
             return redirect('detalhe_piano', piano_id=piano_id)
 
