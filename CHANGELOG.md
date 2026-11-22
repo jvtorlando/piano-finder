@@ -18,9 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- "old money" visual direction: Cormorant Garamond and EB Garamond, antique gold, square corners, hairline rules and ornaments; outlined buttons instead of solid yellow blocks;
-- catalog cards are edge to edge again, without borders, the "working" check mark or the catalog totals line; only pianos under maintenance get a note;
-- piano type icons redrawn as fine line drawings of real pianos (upright, grand, digital on a stand, hybrid, grand seen from above);
+- darker gold palette, hairline rules and outlined buttons, keeping the original Playfair Display and DM Sans fonts;
+- catalog cards keep the original layout (edge to edge, same photo size and type badges) without the "working" check mark or the catalog totals line; only pianos under maintenance get a note;
+- the "Catálogo" menu link scrolls to the catalog instead of reloading the home page;
 - the suggestion form offers the four piano types directly instead of a two-step choice;
 - site copy and README rewritten in plainer language;
 - Brazilian states and piano types now have a single source of truth in `pianos/models.py`;

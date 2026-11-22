@@ -18,7 +18,7 @@
     <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;0,900;1,400;1,700;1,900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
     {# CSS de bibliotecas (Leaflet, recorte) antes do site.css, para o tema do site prevalecer. #}
     {% block head %}{% endblock %}
     {% tailwind_css %}
@@ -32,7 +32,7 @@
         </a>
         <div class="flex items-center gap-0.5 sm:gap-4">
             {% block nav_actions %}
-                <a href="{% url 'home' %}" class="hidden px-2 py-2 text-[0.78rem] tracking-[0.2em] text-muted uppercase transition hover:text-gold-light sm:inline-block">Catálogo</a>
+                <a href="{% url 'home' %}#resultados" class="hidden px-2 py-2 text-[0.78rem] tracking-[0.2em] text-muted uppercase transition hover:text-gold-light sm:inline-block">Catálogo</a>
                 <a href="{% url 'mapa' %}" class="px-2 py-2 text-[0.72rem] tracking-[0.18em] text-muted uppercase transition hover:text-gold-light sm:text-[0.78rem] sm:tracking-[0.2em]">Mapa</a>
                 <a href="{% url 'adicionar_piano' %}" class="btn-gold ml-1 px-3 py-2 text-[0.68rem] whitespace-nowrap sm:px-4 sm:text-[0.72rem]">Indicar piano</a>
             {% endblock %}
@@ -55,8 +55,7 @@
 </main>
 
 <footer class="border-t border-gold/15 px-4 pt-12 pb-24 text-center sm:pb-12">
-    <p class="ornament text-sm" aria-hidden="true">❧</p>
-    <p class="mt-5 font-display text-2xl text-parchment">Piano <em class="text-gold-light">Finder</em></p>
+    <p class="font-display text-2xl text-parchment">Piano <em class="text-gold-light">Finder</em></p>
     <p class="mt-2 text-sm text-muted italic">Pianos de uso livre pelo Brasil, reunidos por quem toca.</p>
     <p class="mt-6 text-[0.7rem] tracking-[0.25em] text-faint uppercase">Por João Orlando · Desde 2026</p>
 </footer>

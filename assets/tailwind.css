@@ -4,9 +4,8 @@
  *   python manage.py tailwind watch      (enquanto edita)
  * O resultado vai para static/css/site.css, que é commitado.
  *
- * Direção visual: "old money". Serifas clássicas, dourado envelhecido,
- * cantos retos, filetes finos e bastante respiro. Nada de cantos
- * arredondados, sombras coloridas ou amarelo vivo.
+ * Direção visual: escuro, dourado e filetes finos. Fontes da primeira
+ * versão do site: Playfair Display nos títulos e DM Sans no texto.
  */
 @import "tailwindcss" source(none);
 
@@ -15,9 +14,9 @@
 @source "../pianos/forms.py";
 
 @theme {
-    --font-display: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
-    --font-serif: "EB Garamond", Garamond, Georgia, serif;
-    --font-sans: "EB Garamond", Garamond, Georgia, serif;
+    --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+    --font-serif: "DM Sans", system-ui, sans-serif;
+    --font-sans: "DM Sans", system-ui, sans-serif;
 
     --color-ink: #0d0b08;
     --color-ebony: #15120d;
@@ -53,12 +52,10 @@
     html {
         scroll-behavior: smooth;
         -webkit-tap-highlight-color: transparent;
-        font-size: 17px;
     }
 
     body {
         @apply bg-ink font-serif text-ivory antialiased;
-        font-feature-settings: "kern", "liga", "onum";
         /* Textura sutil de papel envelhecido sobre o fundo escuro. */
         background-image: radial-gradient(ellipse at top, rgba(185, 154, 91, 0.06), transparent 60%);
         background-attachment: fixed;
@@ -121,13 +118,6 @@
     .section-title {
         @apply flex items-center gap-4 font-serif text-[0.72rem] tracking-[0.3em] text-gold uppercase
             after:h-px after:flex-1 after:bg-gradient-to-r after:from-gold/40 after:to-transparent;
-    }
-
-    /* Filete duplo com ornamento central. */
-    .ornament {
-        @apply mx-auto flex max-w-xs items-center gap-3 text-gold/70
-            before:h-px before:flex-1 before:bg-gradient-to-l before:from-gold/50 before:to-transparent
-            after:h-px after:flex-1 after:bg-gradient-to-r after:from-gold/50 after:to-transparent;
     }
 
     /* Teclas decorativas do topo. */

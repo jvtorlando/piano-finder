@@ -1,48 +1,14 @@
-{# Ícone do tipo de piano, em traço fino. Uso: {% include "pianos/partials/tipo_icone.html" with tipo=piano.tipo classe="size-5" %} #}
-<svg viewBox="0 0 24 24" class="{{ classe|default:'size-5' }} shrink-0" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{# Ícone do tipo de piano (desenhos preenchidos da primeira versão do site). Uso: {% include "pianos/partials/tipo_icone.html" with tipo=piano.tipo classe="size-5" %} #}
+<svg viewBox="0 0 16 16" class="{{ classe|default:'size-5' }} shrink-0" fill="currentColor" aria-hidden="true">
 {% if tipo == 'cauda' %}
-    {# Piano de cauda de perfil, tampa aberta apoiada na vareta. #}
-    <path d="M2.5 12h19v2.6h-19z"/>
-    <path d="M5.5 12 20.5 5.2"/>
-    <path d="M14.5 12V8.1"/>
-    <path d="M2.5 12V10.6h3.3"/>
-    <path d="M4.2 14.6v5.9M19.8 14.6v5.9M3.2 20.5h2M18.8 20.5h2"/>
-    <path d="M9.6 14.6v3.6M11 14.6v3.6M9 18.2h2.6"/>
+    <path d="M3 2 Q3 1 8 1 Q14 1 14 5 Q14 8 11 10 Q9 11.5 7 11.5 L3 11.5 Z"/><rect x="3" y="11.5" width="8" height="2.5" rx="0.4"/><rect x="4" y="12" width="1" height="1.5" rx="0.2" fill="#0d0b08"/><rect x="5.8" y="12" width="1" height="1.5" rx="0.2" fill="#0d0b08"/><rect x="7.6" y="12" width="1" height="1.5" rx="0.2" fill="#0d0b08"/>
 {% elif tipo == 'armario' %}
-    {# Piano vertical (armário) de frente: gabinete alto, estante de partitura, teclado, pernas e pedais. #}
-    <path d="M2.8 2.5h18.4"/>
-    <path d="M4 2.5h16v9H4z"/>
-    <path d="M7 8.2h10"/>
-    <path d="M7.5 5.2h9"/>
-    <path d="M2.5 11.5h19v2.6h-19z"/>
-    <path d="M5.2 12.9v1.2M7.9 12.9v1.2M10.6 12.9v1.2M13.4 12.9v1.2M16.1 12.9v1.2M18.8 12.9v1.2" stroke-width="0.8"/>
-    <g fill="currentColor" stroke="none"><rect x="4.6" y="11.5" width="1.1" height="1.4"/><rect x="7.3" y="11.5" width="1.1" height="1.4"/><rect x="12.8" y="11.5" width="1.1" height="1.4"/><rect x="15.5" y="11.5" width="1.1" height="1.4"/><rect x="18.2" y="11.5" width="1.1" height="1.4"/></g>
-    <path d="M4.5 14.1v6.4M19.5 14.1v6.4M3.6 20.5h1.8M18.6 20.5h1.8"/>
-    <path d="M10.1 20.2h.8M11.6 20.2h.8M13.1 20.2h.8" stroke-width="1"/>
+    <rect x="1.5" y="1" width="13" height="11" rx="0.8"/><rect x="2.5" y="2" width="11" height="2.5" rx="0.3" fill="#0d0b08"/><rect x="3" y="5.5" width="1" height="5" rx="0.2" fill="#0d0b08"/><rect x="5" y="5.5" width="1" height="5" rx="0.2" fill="#0d0b08"/><rect x="7" y="5.5" width="1" height="5" rx="0.2" fill="#0d0b08"/><rect x="9" y="5.5" width="1" height="5" rx="0.2" fill="#0d0b08"/><rect x="11" y="5.5" width="1" height="5" rx="0.2" fill="#0d0b08"/><rect x="3" y="12" width="2" height="3" rx="0.4"/><rect x="11" y="12" width="2" height="3" rx="0.4"/>
 {% elif tipo == 'digital' %}
-    {# Piano digital fino sobre suporte em X. #}
-    <path d="M1.5 8h21v4.5h-21z"/>
-    <path d="M1.5 10h21"/>
-    <g fill="currentColor" stroke="none"><rect x="3.3" y="10" width="0.9" height="1.4"/><rect x="5" y="10" width="0.9" height="1.4"/><rect x="7.9" y="10" width="0.9" height="1.4"/><rect x="9.6" y="10" width="0.9" height="1.4"/><rect x="11.3" y="10" width="0.9" height="1.4"/><rect x="14.2" y="10" width="0.9" height="1.4"/><rect x="15.9" y="10" width="0.9" height="1.4"/><rect x="18.8" y="10" width="0.9" height="1.4"/><rect x="20.5" y="10" width="0.9" height="1.4"/></g>
-    <path d="M10.5 8.9h3"/>
-    <circle cx="4" cy="9" r=".35" fill="currentColor" stroke="none"/>
-    <path d="M5 12.5 9.5 20.5M9.5 12.5 5 20.5M14.5 12.5l4.5 8M19 12.5l-4.5 8"/>
+    <rect x="1" y="4" width="14" height="8" rx="1"/><rect x="2" y="5" width="1.2" height="5" rx="0.2" fill="#0d0b08"/><rect x="4" y="5" width="1.2" height="5" rx="0.2" fill="#0d0b08"/><rect x="6" y="5" width="1.2" height="5" rx="0.2" fill="#0d0b08"/><rect x="8" y="5" width="1.2" height="5" rx="0.2" fill="#0d0b08"/><rect x="10" y="5" width="1.2" height="5" rx="0.2" fill="#0d0b08"/><rect x="12" y="5" width="1.2" height="5" rx="0.2" fill="#0d0b08"/>
 {% elif tipo == 'hibrido' %}
-    {# Híbrido: mesma silhueta do vertical, com o símbolo de ligar no gabinete (parte eletrônica). #}
-    <path d="M2.8 2.5h18.4"/>
-    <path d="M4 2.5h16v9H4z"/>
-    <path d="M12 4.6v2.2"/>
-    <path d="M10.2 5.6a2.6 2.6 0 1 0 3.6 0"/>
-    <path d="M2.5 11.5h19v2.6h-19z"/>
-    <path d="M5.2 12.9v1.2M7.9 12.9v1.2M10.6 12.9v1.2M13.4 12.9v1.2M16.1 12.9v1.2M18.8 12.9v1.2" stroke-width="0.8"/>
-    <g fill="currentColor" stroke="none"><rect x="4.6" y="11.5" width="1.1" height="1.4"/><rect x="7.3" y="11.5" width="1.1" height="1.4"/><rect x="12.8" y="11.5" width="1.1" height="1.4"/><rect x="15.5" y="11.5" width="1.1" height="1.4"/><rect x="18.2" y="11.5" width="1.1" height="1.4"/></g>
-    <path d="M4.5 14.1v6.4M19.5 14.1v6.4M3.6 20.5h1.8M18.6 20.5h1.8"/>
-    <path d="M10.1 20.2h.8M11.6 20.2h.8M13.1 20.2h.8" stroke-width="1"/>
+    <rect x="1" y="6" width="14" height="7" rx="1"/><rect x="2" y="7" width="1.2" height="4" rx="0.2" fill="#0d0b08"/><rect x="4.2" y="7" width="1.2" height="4" rx="0.2" fill="#0d0b08"/><rect x="7.5" y="7" width="1.2" height="4" rx="0.2" fill="#0d0b08"/><rect x="10.5" y="7" width="1.2" height="4" rx="0.2" fill="#0d0b08"/><polygon points="10,1 8,5 10,5 7.5,9.5 12,4.5 9.5,4.5" fill="#c9a84c"/>
 {% else %}
-    {# Acústico (genérico): piano de cauda visto de cima, com as cordas. #}
-    <path d="M4 21.5V8.2C4 5 6 2.5 9 2.5c2.4 0 3.6 1.6 4.6 3.6 1 2 2.8 3.2 4.6 4.6 1.8 1.4 3 3.3 3 5.6v5.2z"/>
-    <path d="M4 18.5h17.2"/>
-    <path d="M7.5 6.5 9 18.5M10.5 6.5l1.4 12M13.5 8.8l1 9.7M16.5 11.2l.7 7.3"/>
-    <g fill="currentColor" stroke="none"><rect x="6" y="18.5" width="0.9" height="1.7"/><rect x="8" y="18.5" width="0.9" height="1.7"/><rect x="11" y="18.5" width="0.9" height="1.7"/><rect x="13" y="18.5" width="0.9" height="1.7"/><rect x="15" y="18.5" width="0.9" height="1.7"/><rect x="18" y="18.5" width="0.9" height="1.7"/></g>
+    <rect x="2" y="2" width="12" height="9" rx="1"/><rect x="3" y="11" width="10" height="1.5"/><rect x="3" y="13" width="1.5" height="2" rx="0.3"/><rect x="11.5" y="13" width="1.5" height="2" rx="0.3"/><rect x="3.5" y="3" width="1" height="5" rx="0.2" fill="#0d0b08"/><rect x="5.5" y="3" width="1" height="5" rx="0.2" fill="#0d0b08"/><rect x="7.5" y="3" width="1" height="5" rx="0.2" fill="#0d0b08"/><rect x="9.5" y="3" width="1" height="5" rx="0.2" fill="#0d0b08"/>
 {% endif %}
 </svg>
