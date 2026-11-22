@@ -18,19 +18,19 @@
     --font-serif: "DM Sans", system-ui, sans-serif;
     --font-sans: "DM Sans", system-ui, sans-serif;
 
-    --color-ink: #0d0b08;
-    --color-ebony: #15120d;
-    --color-coal: #1e1a14;
-    --color-line: #2f291f;
-    --color-ivory: #f1e9da;
-    --color-parchment: #d9ccb3;
-    --color-muted: #a69a83;
-    --color-faint: #6b6152;
-    --color-gold: #b99a5b;
-    --color-gold-light: #d8bd85;
+    --color-ink: #0d0d0d;
+    --color-ebony: #1a1a1a;
+    --color-coal: #222222;
+    --color-line: #2a2a2a;
+    --color-ivory: #f5f0e8;
+    --color-parchment: #d5d0c8;
+    --color-muted: #888888;
+    --color-faint: #555555;
+    --color-gold: #c9a84c;
+    --color-gold-light: #e8c96a;
     --color-oxblood: #5c1a1b;
-    --color-ok: #9cb48a;
-    --color-danger: #c98a7e;
+    --color-ok: #7fc987;
+    --color-danger: #e08080;
 
     --radius-none: 0;
 
@@ -56,9 +56,6 @@
 
     body {
         @apply bg-ink font-serif text-ivory antialiased;
-        /* Textura sutil de papel envelhecido sobre o fundo escuro. */
-        background-image: radial-gradient(ellipse at top, rgba(185, 154, 91, 0.06), transparent 60%);
-        background-attachment: fixed;
     }
 
     ::selection {
@@ -122,11 +119,11 @@
 
     /* Teclas decorativas do topo. */
     .key-white {
-        @apply h-16 w-5 shrink-0 bg-gradient-to-b from-[#efe6d4] to-[#d9ccb3] shadow-md shadow-black/60 sm:h-20 sm:w-6;
+        @apply h-16 w-5 shrink-0 bg-gradient-to-b from-[#f5f0e8] to-[#e0dbd2] shadow-md shadow-black/60 sm:h-20 sm:w-6;
     }
 
     .key-black {
-        @apply z-10 -mx-2 h-10 w-3.5 shrink-0 border border-[#2a241b] bg-gradient-to-b from-[#1a1611] to-[#0b0906] sm:h-12;
+        @apply z-10 -mx-2 h-10 w-3.5 shrink-0 border border-[#333] bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] sm:h-12;
     }
 }
 
@@ -137,7 +134,7 @@
 
 /* Inverte os tiles claros do OpenStreetMap para um mapa escuro e quente. */
 .pf-tiles-escuros {
-    filter: invert(1) hue-rotate(180deg) brightness(0.82) contrast(0.88) saturate(0.25) sepia(0.25);
+    filter: invert(1) hue-rotate(180deg) brightness(0.82) contrast(0.88) saturate(0.3);
 }
 
 .leaflet-popup-content-wrapper,

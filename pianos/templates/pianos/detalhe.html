@@ -26,7 +26,7 @@
         {% if fotos %}
             <div id="fotos-piano" class="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-carousel>
                 {% for foto in fotos %}
-                    <img src="{{ foto }}" alt="{{ piano.nome_local }}, foto {{ forloop.counter }}" class="h-full w-full shrink-0 snap-center object-cover brightness-[0.8] sepia-[0.12]" width="1600" height="1000" {% if not forloop.first %}loading="lazy"{% endif %}>
+                    <img src="{{ foto }}" alt="{{ piano.nome_local }}, foto {{ forloop.counter }}" class="h-full w-full shrink-0 snap-center object-cover brightness-[0.88]" width="1600" height="1000" {% if not forloop.first %}loading="lazy"{% endif %}>
                 {% endfor %}
             </div>
             {% if fotos|length > 1 %}
@@ -37,7 +37,7 @@
                 </div>
             {% endif %}
         {% else %}
-            <div class="flex h-full items-center justify-center bg-[repeating-linear-gradient(90deg,#15120d_0,#15120d_36px,#0d0b08_36px,#0d0b08_40px)]">
+            <div class="flex h-full items-center justify-center bg-[repeating-linear-gradient(90deg,#111_0,#111_36px,#0a0a0a_36px,#0a0a0a_40px)]">
                 <span class="font-display text-9xl text-gold/10" aria-hidden="true">♩</span>
             </div>
         {% endif %}
@@ -91,7 +91,7 @@
         <div class="flex items-center gap-3">
             <div class="relative" role="radiogroup" aria-label="Avalie de 1 a 5 estrelas">
                 {# Camada apagada, camada dourada recortada na largura da média e botões transparentes por cima. #}
-                <div class="flex gap-1 text-[#3a3329]" aria-hidden="true">
+                <div class="flex gap-1 text-[#333]" aria-hidden="true">
                     {% for i in "12345" %}<svg viewBox="0 0 24 24" class="size-5 fill-current"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{% endfor %}
                 </div>
                 <div class="absolute inset-y-0 left-0 overflow-hidden transition-[width] duration-200" style="width: {% widthratio piano.estrelas 5 100 %}%" data-rating-fill aria-hidden="true">

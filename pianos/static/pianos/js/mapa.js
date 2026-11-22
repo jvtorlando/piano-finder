@@ -33,7 +33,7 @@
 
     function popupHtml(p) {
         const foto = p.foto
-            ? `<img src="${escapeHtml(p.foto)}" alt="" class="mb-3 aspect-[16/10] w-full object-cover sepia-[0.15]" loading="lazy">`
+            ? `<img src="${escapeHtml(p.foto)}" alt="" class="mb-3 aspect-[16/10] w-full object-cover" loading="lazy">`
             : '';
         const nota = p.estrelas ? `<span><span class="text-gold">★</span> ${p.estrelas.toFixed(1)}</span>` : '';
         const situacao = p.funcionando
