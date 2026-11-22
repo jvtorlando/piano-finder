@@ -228,7 +228,7 @@ LOGGING = {
 
 # ── Admin (Unfold) ──────────────────────────────────────────────────────────
 from django.templatetags.static import static  # noqa: E402
-from django.urls import reverse, reverse_lazy  # noqa: E402
+from django.urls import reverse  # noqa: E402
 
 UNFOLD = {
     'SITE_TITLE': 'Piano Finder',
@@ -284,7 +284,7 @@ UNFOLD = {
                     {
                         'title': 'Painel',
                         'icon': 'dashboard',
-                        'link': reverse_lazy('admin:index'),
+                        'link': lambda request: reverse('admin:index'),
                     },
                     {
                         'title': 'Pianos pendentes',
@@ -307,12 +307,12 @@ UNFOLD = {
                     {
                         'title': 'Todos os pianos',
                         'icon': 'piano',
-                        'link': reverse_lazy('admin:pianos_piano_changelist'),
+                        'link': lambda request: reverse('admin:pianos_piano_changelist'),
                     },
                     {
                         'title': 'Todos os comentários',
                         'icon': 'forum',
-                        'link': reverse_lazy('admin:pianos_comentario_changelist'),
+                        'link': lambda request: reverse('admin:pianos_comentario_changelist'),
                     },
                 ],
             },
@@ -324,12 +324,12 @@ UNFOLD = {
                     {
                         'title': 'Usuários',
                         'icon': 'person',
-                        'link': reverse_lazy('admin:auth_user_changelist'),
+                        'link': lambda request: reverse('admin:auth_user_changelist'),
                     },
                     {
                         'title': 'Grupos',
                         'icon': 'group',
-                        'link': reverse_lazy('admin:auth_group_changelist'),
+                        'link': lambda request: reverse('admin:auth_group_changelist'),
                     },
                 ],
             },

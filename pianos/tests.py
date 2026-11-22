@@ -1,4 +1,6 @@
 import os
+import subprocess
+import sys
 from decimal import Decimal
 from unittest.mock import ANY, patch
 from urllib.error import URLError
@@ -634,3 +636,21 @@ class DatabaseConfigTests(SimpleTestCase):
             config = database_config()
         self.assertEqual(config['ENGINE'], 'django.db.backends.postgresql')
         self.assertEqual(config['NAME'], 'pianos')
+
+
+class VercelBuildTests(SimpleTestCase):
+    def test_configuracoes_viram_json_sem_carregar_o_django(self):
+        # O build da Vercel lê as configurações e as converte para JSON sem chamar django.setup().
+        # Valores lazy (reverse_lazy, gettext_lazy) quebram nesse ponto e derrubam o deploy.
+        script = (
+            'import json\n'
+            'from django.conf import settings\n'
+            'dados = {k: getattr(settings, k) for k in dir(settings) if k.isupper()}\n'
+            'json.dumps(dados, default=str)\n'
+        )
+        env = {**os.environ, 'DJANGO_SETTINGS_MODULE': 'mapapianos.settings', 'DEBUG': 'True'}
+        resultado = subprocess.run(
+            [sys.executable, '-c', script], cwd=settings.BASE_DIR, env=env,
+            capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(resultado.returncode, 0, resultado.stderr)
