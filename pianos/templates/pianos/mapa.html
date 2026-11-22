@@ -29,7 +29,7 @@
             <li>
                 <button type="button" data-ponto="{{ p.id }}" class="flex w-full items-center gap-4 px-6 py-3.5 text-left transition hover:bg-ebony focus-visible:bg-ebony">
                     {% if p.foto %}
-                        <img src="{{ p.foto }}" alt="" class="aspect-[16/10] w-20 shrink-0 object-cover sepia-[0.15]" loading="lazy">
+                        <img src="{{ p.foto }}" alt="" class="aspect-[16/10] w-20 shrink-0 object-cover" loading="lazy">
                     {% else %}
                         <span class="grid aspect-[16/10] w-20 shrink-0 place-items-center bg-coal font-display text-2xl text-gold/30" aria-hidden="true">♩</span>
                     {% endif %}

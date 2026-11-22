@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- darker gold palette, hairline rules and outlined buttons, keeping the original Playfair Display and DM Sans fonts;
+- hairline rules and outlined buttons, keeping the original neutral black background, gold colors and Playfair Display and DM Sans fonts (no warm tint or sepia on photos);
 - catalog cards keep the original layout (edge to edge, same photo size and type badges) without the "working" check mark or the catalog totals line; only pianos under maintenance get a note;
 - the "Catálogo" menu link scrolls to the catalog instead of reloading the home page;
 - the suggestion form offers the four piano types directly instead of a two-step choice;
