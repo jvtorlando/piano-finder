@@ -41,6 +41,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 INSTALLED_APPS = [
+    # O Unfold precisa vir antes de django.contrib.admin para sobrescrever os templates.
+    'unfold',
+    'unfold.contrib.filters',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -201,5 +204,116 @@ LOGGING = {
             'handlers': ['console'],
             'level': 'ERROR',
         },
+    },
+}
+
+# ── Admin (Unfold) ──────────────────────────────────────────────────────────
+from django.templatetags.static import static  # noqa: E402
+from django.urls import reverse, reverse_lazy  # noqa: E402
+
+UNFOLD = {
+    'SITE_TITLE': 'Piano Finder',
+    'SITE_HEADER': 'Piano Finder',
+    'SITE_SUBHEADER': 'Moderação',
+    'SITE_URL': '/',
+    'SITE_SYMBOL': 'piano',
+    'SITE_FAVICONS': [
+        {'rel': 'icon', 'type': 'image/png', 'href': lambda request: static('favicon.png')},
+    ],
+    'SHOW_HISTORY': True,
+    'SHOW_VIEW_ON_SITE': True,
+    'DASHBOARD_CALLBACK': 'pianos.dashboard.dashboard_callback',
+    'BORDER_RADIUS': '8px',
+    'COLORS': {
+        # Neutros quentes, puxando para o marfim do site.
+        'base': {
+            '50': 'oklch(98.5% .004 80)',
+            '100': 'oklch(96% .008 80)',
+            '200': 'oklch(91.5% .01 80)',
+            '300': 'oklch(85% .012 80)',
+            '400': 'oklch(70% .014 80)',
+            '500': 'oklch(55% .014 80)',
+            '600': 'oklch(45% .012 80)',
+            '700': 'oklch(36% .01 80)',
+            '800': 'oklch(26% .006 80)',
+            '900': 'oklch(20% .004 80)',
+            '950': 'oklch(14% .002 80)',
+        },
+        # Dourado do site (#c9a84c ≈ oklch(74% .117 89.5)).
+        'primary': {
+            '50': 'oklch(98% .02 90)',
+            '100': 'oklch(95% .045 90)',
+            '200': 'oklch(90% .075 90)',
+            '300': 'oklch(84.5% .11 90)',
+            '400': 'oklch(79% .12 90)',
+            '500': 'oklch(74.3% .117 89.5)',
+            '600': 'oklch(64% .11 85)',
+            '700': 'oklch(54% .095 82)',
+            '800': 'oklch(45% .08 80)',
+            '900': 'oklch(38% .065 78)',
+            '950': 'oklch(27% .045 76)',
+        },
+    },
+    'SIDEBAR': {
+        'show_search': True,
+        'show_all_applications': False,
+        'navigation': [
+            {
+                'title': 'Moderação',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Painel',
+                        'icon': 'dashboard',
+                        'link': reverse_lazy('admin:index'),
+                    },
+                    {
+                        'title': 'Pianos pendentes',
+                        'icon': 'pending_actions',
+                        'link': lambda request: reverse('admin:pianos_piano_changelist') + '?aprovado__exact=0',
+                        'badge': 'pianos.dashboard.badge_pianos_pendentes',
+                    },
+                    {
+                        'title': 'Comentários pendentes',
+                        'icon': 'rate_review',
+                        'link': lambda request: reverse('admin:pianos_comentario_changelist') + '?aprovado__exact=0',
+                        'badge': 'pianos.dashboard.badge_comentarios_pendentes',
+                    },
+                ],
+            },
+            {
+                'title': 'Catálogo',
+                'separator': True,
+                'items': [
+                    {
+                        'title': 'Todos os pianos',
+                        'icon': 'piano',
+                        'link': reverse_lazy('admin:pianos_piano_changelist'),
+                    },
+                    {
+                        'title': 'Todos os comentários',
+                        'icon': 'forum',
+                        'link': reverse_lazy('admin:pianos_comentario_changelist'),
+                    },
+                ],
+            },
+            {
+                'title': 'Acesso',
+                'separator': True,
+                'collapsible': True,
+                'items': [
+                    {
+                        'title': 'Usuários',
+                        'icon': 'person',
+                        'link': reverse_lazy('admin:auth_user_changelist'),
+                    },
+                    {
+                        'title': 'Grupos',
+                        'icon': 'group',
+                        'link': reverse_lazy('admin:auth_group_changelist'),
+                    },
+                ],
+            },
+        ],
     },
 }

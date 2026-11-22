@@ -38,7 +38,11 @@ Não há linter nem formatter configurado.
 
 **Infraestrutura:** Django roda na Vercel (serverless). O banco de produção é PostgreSQL na Neon (`DATABASE_URL`), as imagens ficam no Cloudinary e os arquivos estáticos são servidos pelo WhiteNoise. O DNS é da Hostinger. Um push/merge na `main` dispara o deploy de produção na Vercel. O build (`[tool.vercel.scripts]` em `pyproject.toml`) só roda `migrate` quando `VERCEL_ENV=production` e existe `DATABASE_URL`. `build.sh` e `Procfile` são de uma hospedagem anterior (estilo Render/Heroku).
 
-**Moderação:** `Piano.aprovado` e `Comentario.aprovado` começam `False`. Toda view pública filtra por `aprovado=True` (inclusive `get_object_or_404` no detalhe, nos votos e na avaliação). A aprovação acontece só no Django Admin (`pianos/admin.py`, ações em lote e `list_editable`). Qualquer nova consulta pública precisa manter esse filtro.
+**Moderação:** `Piano.aprovado` e `Comentario.aprovado` começam `False`. Toda view pública filtra por `aprovado=True` (inclusive `get_object_or_404` no detalhe, nos votos e na avaliação). A aprovação acontece só no Django Admin. Qualquer nova consulta pública precisa manter esse filtro.
+
+**Admin (Unfold):** o admin usa o tema [django-unfold](https://unfoldadmin.com/). `'unfold'` precisa ficar antes de `django.contrib.admin` em `INSTALLED_APPS`. Os `ModelAdmin`/`TabularInline` vêm de `unfold.admin`, e as colunas e ações usam os decorators `unfold.decorators.display`/`action`. A configuração visual (cores douradas, menu lateral e badges de pendentes) fica no dict `UNFOLD` em `settings.py`. O painel inicial é `pianos/templates/admin/pianos_dashboard.html`, alimentado por `pianos/dashboard.py`, e o layout dele está em `pianos/static/pianos/admin-dashboard.css`. Use CSS próprio nesse arquivo: o CSS do Unfold vem pré-compilado e não inclui classes Tailwind que ele mesmo não usa, como `md:grid-cols-2`. `format_html` sem argumentos quebra no Django 6, então use `mark_safe` para HTML fixo.
+
+Para ter dados no banco local, rode `python manage.py carregar_exemplos`, que só funciona com `DEBUG=True`.
 
 **Fotos (dois caminhos diferentes):**
 - *Formulário público* (`adicionar.html`): o navegador recorta a imagem em 16:10 com `pianos/static/pianos/image-cropper.js`, exporta um JPEG 1600×1000 e envia **direto ao Cloudinary** usando o preset unsigned. Só as URLs voltam ao Django, em campos ocultos `foto_url_1..3`. `PianoForm._clean_cloudinary_url` aceita apenas `https://res.cloudinary.com/<CLOUD_NAME>/image/upload/...`. A view copia `foto_url_1` para o campo do model `foto_url` (o nome difere de propósito).
@@ -53,7 +57,7 @@ Não há linter nem formatter configurado.
 
 **Listas duplicadas:** UFs e tipos de piano estão definidos em mais de um lugar: `TIPO_PIANO_CHOICES` em `models.py`, `ESTADOS`/`TIPOS` em `views.py` (para os filtros) e o conjunto de UFs em `PianoForm.clean_estado`. Altere todos juntos.
 
-**Migrations de dados:** a `0011` importa os pianos iniciais para a produção e só roda com `VERCEL_ENV=production`. A `0012` limpa esses dados. Elas não fazem nada localmente, então o banco local começa vazio: crie pianos pelo admin (`python manage.py createsuperuser`).
+**Migrations de dados:** a `0011` importa os pianos iniciais para a produção e só roda com `VERCEL_ENV=production`. A `0012` limpa esses dados. Elas não fazem nada localmente, então o banco local começa vazio. Use `carregar_exemplos` e `createsuperuser`.
 
 ## Testes
 

@@ -8,6 +8,7 @@ dependencies = [
     "dj-database-url==3.1.2",
     "django-cloudinary-storage @ git+https://github.com/klis87/django-cloudinary-storage.git@1d45a5b165b33f78c69fcd00842b33bbb312499b",
     "django-ratelimit==4.1.0",
+    "django-unfold==0.110.1",
     "gunicorn==25.3.0",
     "psycopg2-binary==2.9.11",
     "Pillow==12.3.0",

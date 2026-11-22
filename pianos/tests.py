@@ -2,6 +2,7 @@ import os
 from unittest.mock import ANY, patch
 
 from django.contrib.admin.sites import AdminSite
+from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -354,6 +355,69 @@ class PianoFormTests(TestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data['estado'], 'PR')
+
+
+@override_settings(
+    DEBUG=True,
+    SECURE_SSL_REDIRECT=False,
+    ALLOWED_HOSTS=['testserver'],
+)
+class AdminTests(TestCase):
+    def setUp(self):
+        admin_user = User.objects.create_superuser('admin', 'admin@example.com', 'senha-de-teste')
+        self.client.force_login(admin_user)
+        self.publicado = Piano.objects.create(
+            nome_local='Teatro Municipal', endereco='Praça Ramos, 1',
+            cidade='São Paulo', estado='SP', tipo='cauda', aprovado=True, likes=3,
+            foto_url='https://res.cloudinary.com/piano-finder-tests/image/upload/a.jpg',
+        )
+        self.pendente = Piano.objects.create(
+            nome_local='Estação da Luz', endereco='Praça da Luz, 1',
+            cidade='São Paulo', estado='SP', tipo='armario',
+        )
+        Comentario.objects.create(piano=self.publicado, texto='Precisa afinar.')
+
+    def test_painel_mostra_filas_de_moderacao(self):
+        resposta = self.client.get(reverse('admin:index'))
+
+        self.assertEqual(resposta.status_code, 200)
+        self.assertContains(resposta, 'Pianos aguardando aprovação')
+        self.assertContains(resposta, 'Estação da Luz')
+        self.assertContains(resposta, 'Precisa afinar.')
+
+    def test_listas_e_formularios_do_admin_carregam(self):
+        urls = [
+            reverse('admin:pianos_piano_changelist'),
+            reverse('admin:pianos_piano_changelist') + '?aprovado__exact=0',
+            reverse('admin:pianos_piano_change', args=[self.publicado.pk]),
+            reverse('admin:pianos_piano_add'),
+            reverse('admin:pianos_comentario_changelist'),
+            reverse('admin:auth_user_changelist'),
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_botao_aprovar_so_aparece_em_piano_pendente(self):
+        url_acao = reverse('admin:pianos_piano_aprovar_este', args=[self.pendente.pk])
+
+        pendente = self.client.get(reverse('admin:pianos_piano_change', args=[self.pendente.pk]))
+        publicado = self.client.get(reverse('admin:pianos_piano_change', args=[self.publicado.pk]))
+
+        self.assertContains(pendente, url_acao)
+        self.assertNotContains(publicado, 'Aprovar e publicar')
+
+    def test_acao_aprovar_so_publica_apos_confirmacao_por_post(self):
+        url = reverse('admin:pianos_piano_aprovar_este', args=[self.pendente.pk])
+
+        confirmacao = self.client.get(url)
+        self.pendente.refresh_from_db()
+        self.assertEqual(confirmacao.status_code, 200)
+        self.assertFalse(self.pendente.aprovado)
+
+        self.client.post(url, {'_form_submitted': 'on'})
+        self.pendente.refresh_from_db()
+        self.assertTrue(self.pendente.aprovado)
 
 
 class DatabaseConfigTests(SimpleTestCase):

@@ -1,0 +1,107 @@
+{% extends 'admin/base.html' %}
+{% load i18n static unfold %}
+
+{% block title %}Painel | {{ site_title }}{% endblock %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'pianos/admin-dashboard.css' %}">
+{% endblock %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<div class="pf-dashboard">
+    <div>
+        {% component "unfold/components/title.html" %}Painel do Piano Finder{% endcomponent %}
+        {% component "unfold/components/text.html" with class="text-font-subtle-light dark:text-font-subtle-dark" %}
+            O que precisa da sua atenção e como o catálogo está indo.
+        {% endcomponent %}
+    </div>
+
+    <div class="pf-indicadores">
+        {% for item in indicadores %}
+            {% component "unfold/components/card.html" with href=item.link size="md" %}
+                <div class="pf-indicador{% if item.destaque %} pf-indicador--alerta{% endif %}">
+                    <span class="material-symbols-outlined pf-indicador__icone">{{ item.icone }}</span>
+                    <div>
+                        <div class="pf-indicador__valor text-font-important-light dark:text-font-important-dark">{{ item.valor }}</div>
+                        <div class="text-font-subtle-light dark:text-font-subtle-dark">{{ item.titulo }}</div>
+                    </div>
+                </div>
+            {% endcomponent %}
+        {% endfor %}
+    </div>
+
+    <div class="pf-colunas">
+        {% component "unfold/components/card.html" with title="Pianos aguardando aprovação" %}
+            {% if pianos_pendentes %}
+                <ul class="pf-fila">
+                    {% for piano in pianos_pendentes %}
+                        <li class="pf-fila__item">
+                            {% if piano.foto_url %}
+                                <img class="pf-fila__foto" src="{{ piano.foto_url }}" alt="" loading="lazy">
+                            {% else %}
+                                <span class="pf-fila__foto pf-fila__foto--vazia material-symbols-outlined">image</span>
+                            {% endif %}
+                            <span class="pf-fila__texto">
+                                <a class="pf-fila__titulo text-font-important-light dark:text-font-important-dark" href="{% url 'admin:pianos_piano_change' piano.pk %}">{{ piano.nome_local }}</a>
+                                <span class="pf-fila__meta">{{ piano.cidade }}/{{ piano.estado }} · enviado {{ piano.data_cadastro|timesince }} atrás</span>
+                            </span>
+                            <a class="text-primary-600 dark:text-primary-400 font-semibold" href="{% url 'admin:pianos_piano_change' piano.pk %}">Revisar</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="pf-vazio"><span class="material-symbols-outlined">task_alt</span> Nenhum piano esperando revisão.</p>
+            {% endif %}
+        {% endcomponent %}
+
+        {% component "unfold/components/card.html" with title="Comentários aguardando aprovação" %}
+            {% if comentarios_pendentes %}
+                <ul class="pf-fila">
+                    {% for comentario in comentarios_pendentes %}
+                        <li class="pf-fila__item">
+                            <span class="pf-fila__texto">
+                                <a class="pf-fila__titulo text-font-important-light dark:text-font-important-dark" href="{% url 'admin:pianos_comentario_change' comentario.pk %}">“{{ comentario.texto|truncatechars:80 }}”</a>
+                                <span class="pf-fila__meta">{{ comentario.nome|default:"Anônimo" }} em {{ comentario.piano.nome_local }} · {{ comentario.data|timesince }} atrás</span>
+                            </span>
+                            <a class="text-primary-600 dark:text-primary-400 font-semibold" href="{% url 'admin:pianos_comentario_change' comentario.pk %}">Revisar</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="pf-vazio"><span class="material-symbols-outlined">task_alt</span> Nenhum comentário esperando revisão.</p>
+            {% endif %}
+        {% endcomponent %}
+    </div>
+
+    <div class="pf-colunas">
+        {% component "unfold/components/card.html" with title="Pianos publicados por tipo" %}
+            {% if pianos_por_tipo %}
+                <div class="pf-barras">
+                    {% for tipo in pianos_por_tipo %}
+                        {% component "unfold/components/progress.html" with title=tipo.title description=tipo.description value=tipo.value %}{% endcomponent %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="pf-vazio">Ainda não há pianos publicados.</p>
+            {% endif %}
+        {% endcomponent %}
+
+        {% component "unfold/components/card.html" with title="Cidades com mais pianos" %}
+            {% if pianos_por_cidade %}
+                <ul class="pf-ranking">
+                    {% for linha in pianos_por_cidade %}
+                        <li><span>{{ linha.cidade }}/{{ linha.estado }}</span><strong>{{ linha.total }}</strong></li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p class="pf-vazio">Ainda não há pianos publicados.</p>
+            {% endif %}
+        {% endcomponent %}
+    </div>
+</div>
+{% endblock %}

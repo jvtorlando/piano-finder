@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- redesigned Django Admin with Unfold, using the Piano Finder gold palette, a moderation dashboard with counters and review queues, sidebar shortcuts with pending badges, status labels, photo thumbnails, tabbed piano forms with inline comments, and a one-click "approve and publish" action;
+- `carregar_exemplos` management command that seeds sample pianos and comments into the local development database.
+
 ### Fixed
 
 - local setup failing with an unconfigured database when `.env` contains an empty `DATABASE_URL`, as copied from `.env.example`; an empty value now falls back to SQLite.
