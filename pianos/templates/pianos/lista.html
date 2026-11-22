@@ -4,32 +4,25 @@
 {% block content %}
 
 {# ── Topo ─────────────────────────────────────────────────────────────── #}
-<header class="relative overflow-hidden border-b border-line/60 px-4 pt-10 pb-12 text-center sm:pt-14 sm:pb-16">
-    <div class="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_at_top,rgba(201,168,76,0.14),transparent_65%)]" aria-hidden="true"></div>
-
-    <div class="relative mb-7 flex justify-center gap-[3px]" aria-hidden="true">
+<header class="relative overflow-hidden border-b border-gold/15 px-4 pt-12 pb-14 text-center sm:pt-16 sm:pb-20">
+    <div class="relative mb-9 flex justify-center gap-[3px]" aria-hidden="true">
         {% for tecla in "WBWBWWBWBWBW" %}
             <div class="{% if tecla == 'B' %}key-black{% else %}key-white{% endif %} animate-keys" style="animation-delay: {{ forloop.counter0 }}0ms"></div>
         {% endfor %}
     </div>
 
-    <p class="eyebrow relative">Cultura · Música · Lazer</p>
-    <h1 class="relative mt-3 font-display text-[clamp(2.75rem,10vw,6.5rem)] leading-[0.92] font-black">
-        Piano<br><em class="text-gold">Finder</em>
+    <p class="eyebrow">Desde 2026 · São Paulo</p>
+    <h1 class="mt-4 font-display text-[clamp(3.4rem,12vw,7.5rem)] leading-[0.85] font-medium tracking-tight">
+        Piano<br><em class="font-normal text-gold-light">Finder</em>
     </h1>
-    <p class="relative mx-auto mt-5 max-w-md text-[0.95rem] text-muted">
-        Descubra pianos públicos para tocar em todo o Brasil — e ajude outras pessoas a encontrá-los.
+    <p class="ornament mt-7 text-sm" aria-hidden="true">✦</p>
+    <p class="mx-auto mt-6 max-w-md text-lg leading-relaxed text-parchment/90 italic">
+        Pianos públicos espalhados pelo Brasil, à espera de alguém que se sente para tocar.
     </p>
 
-    {% if total_publicados %}
-    <p class="relative mt-4 text-xs tracking-wide text-faint">
-        <span class="text-ivory">{{ total_publicados }}</span> piano{{ total_publicados|pluralize }}
-        em <span class="text-ivory">{{ total_cidades }}</span> cidade{{ total_cidades|pluralize }}
-    </p>
-    {% endif %}
-
-    <div class="relative mt-7 flex flex-wrap items-center justify-center gap-3">
-        <a href="{% url 'adicionar_piano' %}" class="btn-gold">+ Adicionar um piano</a>
+    <div class="mt-9 flex flex-wrap items-center justify-center gap-3">
+        <a href="{% url 'adicionar_piano' %}" class="btn-gold">Indicar um piano</a>
+        <a href="{% url 'mapa' %}" class="btn-ghost">Ver no mapa</a>
     </div>
 </header>
 
@@ -37,13 +30,13 @@
 <section id="resultados" class="mx-auto max-w-7xl pb-16 transition-opacity [&.htmx-request]:opacity-50" aria-live="polite">
 
     {# ── Barra de filtros ── #}
-    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
+    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-5 sm:px-8">
         <div class="flex flex-wrap items-center gap-2">
-            <h2 class="mr-1 text-[0.62rem] font-medium tracking-[0.3em] text-muted uppercase">
-                {% if filtros_ativos %}Resultados{% else %}Pianos disponíveis{% endif %}
+            <h2 class="mr-2 text-[0.72rem] tracking-[0.3em] text-muted uppercase">
+                {% if filtros_ativos %}Resultados{% else %}O catálogo{% endif %}
             </h2>
-            <button type="button" class="chip relative {% if filtros_ativos %}chip-on{% endif %}" data-open-dialog="filtros" aria-haspopup="dialog">
-                <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M8 12h8M11 18h2"/></svg>
+            <button type="button" class="chip {% if filtros_ativos %}chip-on{% endif %}" data-open-dialog="filtros" aria-haspopup="dialog">
+                <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 6h16M8 12h8M11 18h2"/></svg>
                 Filtrar
             </button>
             {% for filtro in filtros_aplicados %}
@@ -53,21 +46,21 @@
                 </a>
             {% endfor %}
         </div>
-        <span class="text-xs text-faint">{{ pianos|length }} piano{{ pianos|length|pluralize }}</span>
+        <span class="text-sm text-faint italic">{{ pianos|length }} piano{{ pianos|length|pluralize }}</span>
     </div>
 
-    {# ── Cards ── #}
-    <div class="grid gap-px bg-line/40 sm:grid-cols-2 sm:gap-4 sm:bg-transparent sm:px-8 lg:grid-cols-3">
+    {# ── Cards: de ponta a ponta, separados por um fio fino ── #}
+    <div class="grid gap-[2px] sm:grid-cols-2 lg:grid-cols-3">
         {% for piano in pianos %}
             {% partial card %}
         {% empty %}
-            <div class="col-span-full bg-ink px-6 py-20 text-center">
-                <p class="text-4xl opacity-30" aria-hidden="true">🎹</p>
+            <div class="col-span-full px-6 py-24 text-center">
+                <p class="ornament text-sm" aria-hidden="true">❧</p>
                 {% if filtros_ativos %}
-                    <p class="mt-4 font-display text-lg text-muted italic">Nenhum piano encontrado com esses filtros.</p>
-                    <a href="{% url 'home' %}" class="btn-ghost mt-6">Limpar filtros</a>
+                    <p class="mt-6 font-display text-2xl text-parchment italic">Nenhum piano com esses filtros.</p>
+                    <a href="{% url 'home' %}" class="btn-ghost mt-8">Limpar filtros</a>
                 {% else %}
-                    <p class="mt-4 font-display text-lg text-muted italic">Nenhum piano publicado ainda.<br>Seja o primeiro a adicionar!</p>
+                    <p class="mt-6 font-display text-2xl text-parchment italic">Ainda não há pianos publicados.<br>Conhece algum? Indique o primeiro.</p>
                 {% endif %}
             </div>
         {% endfor %}
@@ -78,62 +71,58 @@
 {# ── Card de um piano ─────────────────────────────────────────────────── #}
 {% partialdef card %}
 {% with fotos=piano.fotos %}
-<article class="group relative overflow-hidden bg-ebony sm:rounded-md sm:border sm:border-line/60 sm:transition sm:hover:border-gold/50" data-reveal>
-<a href="{% url 'detalhe_piano' piano.id %}" class="block focus-visible:outline-offset-[-2px]">
+<article class="group relative bg-ebony" data-reveal>
+<a href="{% url 'detalhe_piano' piano.id %}" class="block focus-visible:outline-offset-[-3px]">
     <div class="relative aspect-[16/10] overflow-hidden bg-coal">
         {% if fotos %}
             <div class="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-carousel>
                 {% for foto in fotos %}
-                    <img src="{{ foto }}" alt="{% if forloop.first %}{{ piano.nome_local }}{% else %}{{ piano.nome_local }} — foto {{ forloop.counter }}{% endif %}"
-                         class="h-full w-full shrink-0 snap-center object-cover brightness-90 transition duration-500 group-hover:scale-[1.03]"
+                    <img src="{{ foto }}" alt="{% if forloop.first %}{{ piano.nome_local }}{% else %}{{ piano.nome_local }}, foto {{ forloop.counter }}{% endif %}"
+                         class="h-full w-full shrink-0 snap-center object-cover brightness-[0.82] sepia-[0.12] transition duration-700 group-hover:scale-[1.03] group-hover:brightness-95"
                          loading="lazy" decoding="async" width="1600" height="1000">
                 {% endfor %}
             </div>
             {% if fotos|length > 1 %}
-                <div class="pointer-events-none absolute right-3 bottom-3 z-10 flex gap-1" data-carousel-dots>
+                <div class="pointer-events-none absolute right-4 bottom-4 z-10 flex gap-1.5" data-carousel-dots>
                     {% for foto in fotos %}<span class="size-1.5 rounded-full bg-white/40 transition {% if forloop.first %}scale-125 bg-gold{% endif %}"></span>{% endfor %}
                 </div>
             {% endif %}
         {% else %}
-            <div class="flex h-full items-center justify-center bg-[repeating-linear-gradient(90deg,#111_0,#111_18px,#0a0a0a_18px,#0a0a0a_20px)]">
-                <span class="font-display text-5xl opacity-15" aria-hidden="true">♩</span>
+            <div class="flex h-full items-center justify-center bg-[repeating-linear-gradient(90deg,#15120d_0,#15120d_18px,#0d0b08_18px,#0d0b08_20px)]">
+                <span class="font-display text-6xl text-gold/15" aria-hidden="true">♩</span>
             </div>
         {% endif %}
 
-        <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-45% to-ink/95"></div>
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink/30 via-transparent via-40% to-ink/95"></div>
 
-        <span class="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-sm border border-gold/50 bg-ink/80 px-2 py-1 text-[0.55rem] font-medium tracking-[0.14em] text-gold uppercase backdrop-blur">
-            {% include "pianos/partials/tipo_icone.html" with tipo=piano.tipo classe="size-3.5" %}
+        <span class="absolute top-4 left-4 z-10 inline-flex items-center gap-1.5 border border-gold/45 bg-ink/75 px-2.5 py-1 text-[0.66rem] tracking-[0.18em] text-gold-light uppercase backdrop-blur-sm">
+            {% include "pianos/partials/tipo_icone.html" with tipo=piano.tipo classe="size-4" %}
             {{ piano.get_tipo_display }}
         </span>
         {% if piano.destaque %}
-            <span class="absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-sm bg-gold px-2 py-1 text-[0.55rem] font-bold tracking-[0.15em] text-ink uppercase">★ Destaque</span>
+            <span class="absolute top-4 right-4 z-10 bg-gold px-2.5 py-1 text-[0.66rem] tracking-[0.2em] text-ink uppercase">Destaque</span>
         {% endif %}
 
-        <div class="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-4">
-            <h3 class="font-display text-xl leading-tight font-bold text-ivory">
-                {{ piano.nome_local }}
-            </h3>
-            <p class="mt-1 truncate text-xs text-ivory/60">{{ piano.endereco }}</p>
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-5">
+            <h3 class="font-display text-[1.7rem] leading-[1.05] font-medium text-ivory">{{ piano.nome_local }}</h3>
+            <p class="mt-1 truncate text-sm text-parchment/70 italic">{{ piano.endereco }}</p>
         </div>
     </div>
 
-    <div class="flex items-center justify-between gap-3 px-4 py-3">
-        <p class="truncate text-[0.6rem] font-medium tracking-[0.22em] text-gold uppercase">{{ piano.cidade }} · {{ piano.estado }}</p>
-        <div class="flex shrink-0 items-center gap-3 text-xs text-muted">
+    <div class="flex items-center justify-between gap-3 px-5 py-3.5">
+        <p class="truncate text-[0.7rem] tracking-[0.24em] text-gold uppercase">{{ piano.cidade }} · {{ piano.estado }}</p>
+        <div class="flex shrink-0 items-center gap-4 text-sm text-muted">
+            {% if not piano.esta_funcionando %}
+                <span class="text-[0.68rem] tracking-[0.16em] text-danger uppercase">Em manutenção</span>
+            {% endif %}
             {% if piano.total_avaliacoes %}
                 <span title="Nota média"><span class="text-gold">★</span> {{ piano.estrelas|floatformat:1 }}</span>
             {% endif %}
             {% if piano.likes %}
                 <span class="inline-flex items-center gap-1" title="Curtidas">
-                    <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     {{ piano.likes }}
                 </span>
-            {% endif %}
-            {% if piano.esta_funcionando %}
-                <span class="rounded-sm border border-ok/30 bg-ok/10 px-2 py-0.5 text-[0.6rem] text-ok" title="Funcionando">✓</span>
-            {% else %}
-                <span class="rounded-sm border border-danger/30 bg-danger/10 px-2 py-0.5 text-[0.6rem] text-danger" title="Em manutenção">✕</span>
             {% endif %}
         </div>
     </div>
@@ -143,29 +132,29 @@
 {% endpartialdef %}
 
 {# ── Filtros (folha inferior no celular, janela no desktop) ───────────── #}
-<dialog id="filtros" class="m-0 mt-auto w-full max-w-none rounded-t-2xl border-t border-line bg-[#0f0f0f] p-0 text-ivory backdrop:bg-black/60 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-md sm:rounded-lg sm:border">
-    <form method="get" action="{% url 'home' %}" class="max-h-[80dvh] overflow-y-auto px-5 pt-4 pb-8 sm:pb-6"
+<dialog id="filtros" class="m-0 mt-auto w-full max-w-none border-t border-gold/30 bg-ebony p-0 text-ivory backdrop:bg-black/70 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-md sm:border">
+    <form method="get" action="{% url 'home' %}" class="max-h-[80dvh] overflow-y-auto px-6 pt-5 pb-8 sm:pb-6"
           hx-get="{% url 'home' %}" hx-target="#resultados" hx-swap="outerHTML" hx-push-url="true"
           hx-trigger="change, input changed delay:400ms from:#filtro-cidade, submit"
           data-close-on-submit>
-        <div class="mx-auto mb-5 h-1 w-9 rounded-full bg-line sm:hidden" aria-hidden="true"></div>
-        <div class="mb-5 flex items-center justify-between">
-            <h2 class="text-xs tracking-[0.25em] text-muted uppercase">Filtrar pianos</h2>
+        <div class="mx-auto mb-5 h-px w-10 bg-gold/50 sm:hidden" aria-hidden="true"></div>
+        <div class="mb-6 flex items-center justify-between">
+            <h2 class="font-display text-2xl">Filtrar <em class="text-gold-light">pianos</em></h2>
             <button type="button" class="p-1 text-muted hover:text-ivory" data-close-dialog aria-label="Fechar">✕</button>
         </div>
 
-        <fieldset class="mb-6">
+        <fieldset class="mb-7">
             <legend class="field-label">Tipo</legend>
             <div class="flex flex-wrap gap-1.5">
                 <label class="cursor-pointer">
                     <input type="radio" name="tipo" value="" class="peer sr-only" {% if not tipo_sel %}checked{% endif %}>
-                    <span class="chip peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold">Todos</span>
+                    <span class="chip peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold-light peer-focus-visible:outline-1 peer-focus-visible:outline-gold">Todos</span>
                 </label>
                 {% for valor, rotulo in tipos %}
                 <label class="cursor-pointer">
                     <input type="radio" name="tipo" value="{{ valor }}" class="peer sr-only" {% if tipo_sel == valor %}checked{% endif %}>
-                    <span class="chip peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold">
-                        {% include "pianos/partials/tipo_icone.html" with tipo=valor classe="size-3.5" %}
+                    <span class="chip peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold-light peer-focus-visible:outline-1 peer-focus-visible:outline-gold">
+                        {% include "pianos/partials/tipo_icone.html" with tipo=valor classe="size-4" %}
                         {{ rotulo }}
                     </span>
                 </label>
@@ -173,22 +162,22 @@
             </div>
         </fieldset>
 
-        <div class="mb-6">
+        <div class="mb-7">
             <label for="filtro-cidade" class="field-label">Cidade</label>
-            <input type="search" id="filtro-cidade" name="cidade" value="{{ cidade_sel }}" placeholder="Ex: São Paulo" class="field-input" autocomplete="off">
+            <input type="search" id="filtro-cidade" name="cidade" value="{{ cidade_sel }}" placeholder="São Paulo, Curitiba, Recife…" class="field-input" autocomplete="off">
         </div>
 
-        <fieldset class="mb-7">
+        <fieldset class="mb-8">
             <legend class="field-label">Estado</legend>
             <div class="grid grid-cols-6 gap-1.5 sm:grid-cols-7">
                 <label class="col-span-2 cursor-pointer">
                     <input type="radio" name="estado" value="" class="peer sr-only" {% if not estado_sel %}checked{% endif %}>
-                    <span class="chip w-full justify-center peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold">Todos</span>
+                    <span class="chip w-full justify-center peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold-light peer-focus-visible:outline-1 peer-focus-visible:outline-gold">Todos</span>
                 </label>
                 {% for uf, nome in estados %}
                 <label class="cursor-pointer" title="{{ nome }}">
                     <input type="radio" name="estado" value="{{ uf }}" class="peer sr-only" {% if estado_sel == uf %}checked{% endif %}>
-                    <span class="chip w-full justify-center px-0 peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold">{{ uf }}</span>
+                    <span class="chip w-full justify-center px-0 peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold-light peer-focus-visible:outline-1 peer-focus-visible:outline-gold">{{ uf }}</span>
                 </label>
                 {% endfor %}
             </div>

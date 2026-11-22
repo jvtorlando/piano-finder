@@ -13,15 +13,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - HTMX (vendored, no CDN): catalog filters update the results in place as options are picked, with clean shareable URLs, and comments are submitted without a page reload;
 - interactive map page (`/mapa/`) built with Leaflet and OpenStreetMap tiles, with a "near me" button that sorts pianos by distance using the browser's location, plus a location map on each piano page;
 - latitude and longitude for pianos, filled automatically from the address through OpenStreetMap Nominatim when an administrator saves a piano, with a bulk "find coordinates" admin action and manual correction;
+- Vercel Web Analytics and Speed Insights on Vercel deployments (cookieless, toggled with `VERCEL_ANALYTICS`);
 - `carregar_exemplos` management command that seeds sample pianos and comments into the local development database.
 
 ### Changed
 
+- "old money" visual direction: Cormorant Garamond and EB Garamond, antique gold, square corners, hairline rules and ornaments; outlined buttons instead of solid yellow blocks;
+- catalog cards are edge to edge again, without borders, the "working" check mark or the catalog totals line; only pianos under maintenance get a note;
+- piano type icons redrawn as fine line drawings of real pianos (upright, grand, digital on a stand, hybrid, grand seen from above);
+- the suggestion form offers the four piano types directly instead of a two-step choice;
+- site copy and README rewritten in plainer language;
 - Brazilian states and piano types now have a single source of truth in `pianos/models.py`;
 - the "how to get there" link uses an encoded Google Maps search URL.
 
 ### Fixed
 
+- star rating: after voting the stars jumped back to the old average, the stars showed the visitor's vote while the number showed the average, there were no partial stars, and the number switched from "5,0" to "3.5" after a vote;
+- static JS and CSS URLs now carry the deploy version (`?v=`), so browsers stop using old cached scripts after a release;
 - local setup failing with an unconfigured database when `.env` contains an empty `DATABASE_URL`, as copied from `.env.example`; an empty value now falls back to SQLite.
 
 ## [1.0.0] - 2026-08-06

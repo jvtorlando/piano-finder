@@ -1,183 +1,197 @@
 {% extends "pianos/base.html" %}
 {% load static %}
 
-{% block title %}{{ piano.nome_local }} — Piano Finder{% endblock %}
+{% block title %}{{ piano.nome_local }} · Piano Finder{% endblock %}
 {% block description %}Piano {{ piano.get_tipo_display|lower }} em {{ piano.cidade }}/{{ piano.estado }}: {{ piano.endereco }}.{% endblock %}
-{% block og_title %}{{ piano.nome_local }} — Piano Finder{% endblock %}
-{% block og_description %}{{ piano.cidade }}, {{ piano.estado }}{% if piano.descricao %} — {{ piano.descricao|truncatechars:100 }}{% else %} — Piano público disponível para tocar.{% endif %}{% endblock %}
+{% block og_title %}{{ piano.nome_local }} · Piano Finder{% endblock %}
+{% block og_description %}{{ piano.cidade }}, {{ piano.estado }}.{% if piano.descricao %} {{ piano.descricao|truncatechars:100 }}{% else %} Piano público para tocar.{% endif %}{% endblock %}
 {% block og_image %}{% if piano.foto_url %}{{ piano.foto_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
 {% block twitter_card %}summary_large_image{% endblock %}
 
 {% block head %}
-{% if piano.tem_coordenadas %}<link rel="stylesheet" href="{% static 'pianos/vendor/leaflet/leaflet.css' %}">{% endif %}
+{% if piano.tem_coordenadas %}<link rel="stylesheet" href="{% static 'pianos/vendor/leaflet/leaflet.css' %}?v={{ static_version }}">{% endif %}
 {% endblock %}
 
 {% block nav_actions %}
-    <a href="{% url 'home' %}" class="text-sm text-muted transition hover:text-ivory">← Todos os pianos</a>
+    <a href="{% url 'home' %}" class="px-2 py-2 text-[0.78rem] tracking-[0.2em] text-muted uppercase transition hover:text-gold-light">← Catálogo</a>
+    <a href="{% url 'mapa' %}" class="px-2 py-2 text-[0.78rem] tracking-[0.2em] text-muted uppercase transition hover:text-gold-light">Mapa</a>
 {% endblock %}
 
 {% block content %}
 {% with fotos=piano.fotos %}
 
 {# ── Fotos ────────────────────────────────────────────────────────────── #}
-<section class="relative bg-ebony" aria-label="Fotos do piano">
-    <div class="relative mx-auto aspect-[16/10] max-h-[70dvh] w-full max-w-6xl overflow-hidden sm:mt-6 sm:rounded-lg">
+<section class="relative" aria-label="Fotos do piano">
+    <div class="relative mx-auto aspect-[16/10] max-h-[72dvh] w-full max-w-6xl overflow-hidden bg-ebony sm:mt-8 sm:outline sm:outline-1 sm:outline-offset-[6px] sm:outline-gold/25">
         {% if fotos %}
             <div id="fotos-piano" class="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-carousel>
                 {% for foto in fotos %}
-                    <img src="{{ foto }}" alt="{{ piano.nome_local }} — foto {{ forloop.counter }}" class="h-full w-full shrink-0 snap-center object-cover brightness-[0.8]" width="1600" height="1000" {% if not forloop.first %}loading="lazy"{% endif %}>
+                    <img src="{{ foto }}" alt="{{ piano.nome_local }}, foto {{ forloop.counter }}" class="h-full w-full shrink-0 snap-center object-cover brightness-[0.8] sepia-[0.12]" width="1600" height="1000" {% if not forloop.first %}loading="lazy"{% endif %}>
                 {% endfor %}
             </div>
             {% if fotos|length > 1 %}
-                <button type="button" class="absolute top-1/2 left-3 z-10 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white/10 bg-ink/60 text-xl text-ivory backdrop-blur transition hover:bg-gold hover:text-ink" data-carousel-step="fotos-piano" data-direction="-1" aria-label="Foto anterior">‹</button>
-                <button type="button" class="absolute top-1/2 right-3 z-10 grid size-10 -translate-y-1/2 place-items-center rounded-full border border-white/10 bg-ink/60 text-xl text-ivory backdrop-blur transition hover:bg-gold hover:text-ink" data-carousel-step="fotos-piano" data-direction="1" aria-label="Próxima foto">›</button>
-                <div class="pointer-events-none absolute top-4 left-1/2 z-10 flex -translate-x-1/2 gap-1.5" data-carousel-dots>
+                <button type="button" class="absolute top-1/2 left-4 z-10 grid size-11 -translate-y-1/2 place-items-center border border-gold/40 bg-ink/60 font-display text-2xl text-gold-light backdrop-blur-sm transition hover:bg-gold hover:text-ink" data-carousel-step="fotos-piano" data-direction="-1" aria-label="Foto anterior">‹</button>
+                <button type="button" class="absolute top-1/2 right-4 z-10 grid size-11 -translate-y-1/2 place-items-center border border-gold/40 bg-ink/60 font-display text-2xl text-gold-light backdrop-blur-sm transition hover:bg-gold hover:text-ink" data-carousel-step="fotos-piano" data-direction="1" aria-label="Próxima foto">›</button>
+                <div class="pointer-events-none absolute top-5 left-1/2 z-10 flex -translate-x-1/2 gap-1.5" data-carousel-dots>
                     {% for foto in fotos %}<span class="size-1.5 rounded-full bg-white/40 transition {% if forloop.first %}scale-125 bg-gold{% endif %}"></span>{% endfor %}
                 </div>
             {% endif %}
         {% else %}
-            <div class="flex h-full items-center justify-center bg-[repeating-linear-gradient(90deg,#111_0,#111_36px,#0d0d0d_36px,#0d0d0d_40px)]">
-                <span class="font-display text-8xl opacity-10" aria-hidden="true">♩</span>
+            <div class="flex h-full items-center justify-center bg-[repeating-linear-gradient(90deg,#15120d_0,#15120d_36px,#0d0b08_36px,#0d0b08_40px)]">
+                <span class="font-display text-9xl text-gold/10" aria-hidden="true">♩</span>
             </div>
         {% endif %}
 
         <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-40% to-ink"></div>
 
-        <div class="absolute inset-x-0 bottom-0 z-10 p-5 sm:p-8">
-            <p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.6rem] font-medium tracking-[0.2em] text-gold uppercase">
-                <span>{{ piano.cidade }}</span><span class="text-faint">·</span>
-                <span>{{ piano.estado }}</span><span class="text-faint">·</span>
-                <span class="inline-flex items-center gap-1.5">{% include "pianos/partials/tipo_icone.html" with tipo=piano.tipo classe="size-3.5" %}{{ piano.get_tipo_display }}</span>
-                {% if piano.destaque %}<span class="rounded-sm bg-gold px-1.5 py-0.5 text-ink">★ Destaque</span>{% endif %}
+        <div class="absolute inset-x-0 bottom-0 z-10 p-6 sm:p-10">
+            <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] tracking-[0.24em] text-gold uppercase">
+                <span>{{ piano.cidade }} · {{ piano.estado }}</span>
+                <span class="text-faint" aria-hidden="true">✦</span>
+                <span class="inline-flex items-center gap-1.5">{% include "pianos/partials/tipo_icone.html" with tipo=piano.tipo classe="size-4" %}{{ piano.get_tipo_display }}</span>
+                {% if piano.destaque %}<span class="bg-gold px-2 py-0.5 text-ink">Destaque</span>{% endif %}
             </p>
-            <h1 class="mt-2 font-display text-[clamp(1.75rem,5.5vw,3.25rem)] leading-[1.05] font-black">{{ piano.nome_local }}</h1>
+            <h1 class="mt-3 font-display text-[clamp(2.2rem,6vw,4rem)] leading-[1] font-medium">{{ piano.nome_local }}</h1>
         </div>
     </div>
 </section>
 {% endwith %}
 
-<div class="mx-auto max-w-3xl px-4 pb-16 sm:px-6">
+<div class="mx-auto max-w-3xl px-4 pb-20 sm:px-6">
 
     {# ── Ações ── #}
-    <div class="mt-5 grid grid-cols-3 gap-2" data-reveal>
+    <div class="mt-8 grid grid-cols-3 gap-px border border-line bg-line" data-reveal>
         <a href="https://www.google.com/maps/search/?api=1&amp;query={{ piano.nome_local|urlencode }}%2C%20{{ piano.endereco|urlencode }}%2C%20{{ piano.cidade|urlencode }}%20{{ piano.estado|urlencode }}"
-           target="_blank" rel="noopener" class="flex flex-col items-center justify-center gap-1.5 rounded-md border border-gold/40 bg-gold/10 px-2 py-3.5 text-[0.65rem] font-medium tracking-wider text-gold uppercase transition hover:bg-gold/20 sm:flex-row sm:text-xs">
-            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+           target="_blank" rel="noopener" class="flex flex-col items-center justify-center gap-1.5 bg-ebony px-2 py-4 text-[0.72rem] tracking-[0.18em] text-gold-light uppercase transition hover:bg-coal sm:flex-row sm:gap-2">
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             Como chegar
         </a>
 
         <button type="button"
-                class="group flex flex-col items-center justify-center gap-1.5 rounded-md border border-line bg-ebony px-2 py-3.5 text-[0.65rem] font-medium tracking-wider text-muted uppercase transition hover:border-[#e05555]/60 aria-pressed:border-[#e05555]/60 aria-pressed:text-[#e05555] sm:flex-row sm:text-xs"
+                class="group flex flex-col items-center justify-center gap-1.5 bg-ebony px-2 py-4 text-[0.72rem] tracking-[0.18em] text-muted uppercase transition hover:bg-coal hover:text-ivory aria-pressed:text-[#c96b63] sm:flex-row sm:gap-2"
                 data-like-url="{% url 'like_piano' piano.id %}"
                 aria-pressed="{% if voto_atual == 'like' %}true{% else %}false{% endif %}"
                 aria-label="Curtir este piano">
-            <svg viewBox="0 0 24 24" class="size-5 transition group-aria-pressed:fill-current" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <svg viewBox="0 0 24 24" class="size-5 transition group-aria-pressed:fill-current" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             <span data-like-count>{{ piano.likes }}</span>
         </button>
 
         <button type="button"
-                class="flex flex-col items-center justify-center gap-1.5 rounded-md border border-line bg-ebony px-2 py-3.5 text-[0.65rem] font-medium tracking-wider text-muted uppercase transition hover:border-ivory/40 hover:text-ivory sm:flex-row sm:text-xs"
+                class="flex flex-col items-center justify-center gap-1.5 bg-ebony px-2 py-4 text-[0.72rem] tracking-[0.18em] text-muted uppercase transition hover:bg-coal hover:text-ivory sm:flex-row sm:gap-2"
                 data-share data-share-title="{{ piano.nome_local }}">
-            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
             <span data-share-label>Compartilhar</span>
         </button>
     </div>
 
-    {# ── Avaliação ── #}
-    <div class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-ebony px-4 py-3.5"
-         data-reveal data-rating-url="{% url 'avaliar_piano' piano.id %}" data-minha-avaliacao="{{ minha_avaliacao|default:'' }}">
+    {# ── Avaliação: as estrelas mostram sempre a média; a nota da pessoa aparece no texto. ── #}
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border border-line bg-ebony px-5 py-4"
+         data-reveal data-rating-url="{% url 'avaliar_piano' piano.id %}"
+         data-media="{{ piano.estrelas|stringformat:'.2f' }}" data-minha-avaliacao="{{ minha_avaliacao|default:'' }}">
         <div class="flex items-center gap-3">
-            <div class="flex gap-0.5" role="radiogroup" aria-label="Avalie de 1 a 5 estrelas">
-                {% for i in "12345" %}
-                    <button type="button" class="p-0.5 text-[#3a3a3a] transition hover:scale-110 data-[on=true]:text-gold disabled:cursor-default disabled:hover:scale-100"
-                            data-star="{{ forloop.counter }}" data-on="{% if piano.estrelas >= forloop.counter %}true{% else %}false{% endif %}"
-                            role="radio" aria-checked="false" aria-label="{{ forloop.counter }} estrela{{ forloop.counter|pluralize }}">
-                        <svg viewBox="0 0 24 24" class="size-5 fill-current" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                    </button>
-                {% endfor %}
+            <div class="relative" role="radiogroup" aria-label="Avalie de 1 a 5 estrelas">
+                {# Camada apagada, camada dourada recortada na largura da média e botões transparentes por cima. #}
+                <div class="flex gap-1 text-[#3a3329]" aria-hidden="true">
+                    {% for i in "12345" %}<svg viewBox="0 0 24 24" class="size-5 fill-current"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{% endfor %}
+                </div>
+                <div class="absolute inset-y-0 left-0 overflow-hidden transition-[width] duration-200" style="width: {% widthratio piano.estrelas 5 100 %}%" data-rating-fill aria-hidden="true">
+                    <div class="flex w-max gap-1 text-gold">
+                        {% for i in "12345" %}<svg viewBox="0 0 24 24" class="size-5 fill-current"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>{% endfor %}
+                    </div>
+                </div>
+                <div class="absolute inset-0 flex gap-1">
+                    {% for i in "12345" %}
+                        <button type="button" class="size-5 cursor-pointer disabled:cursor-default" data-star="{{ forloop.counter }}"
+                                role="radio" aria-checked="{% if minha_avaliacao == forloop.counter %}true{% else %}false{% endif %}"
+                                aria-label="{{ forloop.counter }} estrela{{ forloop.counter|pluralize }}"
+                                {% if minha_avaliacao %}disabled{% endif %}></button>
+                    {% endfor %}
+                </div>
             </div>
-            <span class="text-sm font-medium text-ivory" data-rating-avg>{{ piano.estrelas|floatformat:1 }}</span>
-            <span class="text-xs text-muted" data-rating-total>({{ piano.total_avaliacoes }})</span>
+            <span class="font-display text-2xl leading-none text-ivory" data-rating-avg>{{ piano.estrelas|floatformat:1 }}</span>
+            <span class="text-sm text-muted italic" data-rating-total>({{ piano.total_avaliacoes }} avaliaç{{ piano.total_avaliacoes|pluralize:"ão,ões" }})</span>
         </div>
-        <span class="text-xs text-muted" data-rating-status>{% if piano.total_avaliacoes %}Toque para avaliar{% else %}Seja o primeiro a avaliar!{% endif %}</span>
+        <span class="text-sm italic {% if minha_avaliacao %}text-gold{% else %}text-muted{% endif %}" data-rating-status>
+            {% if minha_avaliacao %}Sua nota: {{ minha_avaliacao }} de 5{% elif piano.total_avaliacoes %}Toque nas estrelas para dar sua nota{% else %}Ninguém avaliou ainda. Que tal ser o primeiro?{% endif %}
+        </span>
     </div>
 
     {# ── Informações ── #}
-    <dl class="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-md border border-line bg-line sm:grid-cols-3" data-reveal>
-        <div class="col-span-2 bg-ebony px-4 py-3.5 sm:col-span-1">
-            <dt class="text-[0.55rem] tracking-[0.2em] text-muted uppercase">Endereço</dt>
-            <dd class="mt-1 text-sm font-medium">{{ piano.endereco }}</dd>
+    <dl class="mt-4 grid grid-cols-2 gap-px border border-line bg-line sm:grid-cols-3" data-reveal>
+        <div class="col-span-2 bg-ebony px-5 py-4 sm:col-span-1">
+            <dt class="text-[0.66rem] tracking-[0.24em] text-muted uppercase">Endereço</dt>
+            <dd class="mt-1.5 text-lg leading-snug">{{ piano.endereco }}</dd>
         </div>
-        <div class="bg-ebony px-4 py-3.5">
-            <dt class="text-[0.55rem] tracking-[0.2em] text-muted uppercase">Situação</dt>
-            <dd class="mt-1 text-sm font-medium {% if piano.esta_funcionando %}text-ok{% else %}text-danger{% endif %}">
-                {% if piano.esta_funcionando %}✓ Funcionando{% else %}✕ Em manutenção{% endif %}
+        <div class="bg-ebony px-5 py-4">
+            <dt class="text-[0.66rem] tracking-[0.24em] text-muted uppercase">Situação</dt>
+            <dd class="mt-1.5 text-lg leading-snug {% if piano.esta_funcionando %}text-ok{% else %}text-danger{% endif %}">
+                {% if piano.esta_funcionando %}Funcionando{% else %}Em manutenção{% endif %}
             </dd>
         </div>
-        <div class="bg-ebony px-4 py-3.5">
-            <dt class="text-[0.55rem] tracking-[0.2em] text-muted uppercase">Cadastrado em</dt>
-            <dd class="mt-1 text-sm font-medium">{{ piano.data_cadastro|date:"d/m/Y" }}</dd>
+        <div class="bg-ebony px-5 py-4">
+            <dt class="text-[0.66rem] tracking-[0.24em] text-muted uppercase">No catálogo desde</dt>
+            <dd class="mt-1.5 text-lg leading-snug">{{ piano.data_cadastro|date:"d/m/Y" }}</dd>
         </div>
     </dl>
 
     {% if piano.tem_coordenadas %}
-    <div class="mt-3 overflow-hidden rounded-md border border-line" data-reveal>
+    <div class="mt-4 border border-line" data-reveal>
         <div id="mapa-piano" class="aspect-[16/9] w-full bg-ebony sm:aspect-[21/9]"
              data-lat="{{ piano.latitude|stringformat:'s' }}" data-lng="{{ piano.longitude|stringformat:'s' }}" data-nome="{{ piano.nome_local }}"
              role="region" aria-label="Localização de {{ piano.nome_local }} no mapa"></div>
-        <a href="{% url 'mapa' %}?piano={{ piano.id }}" class="flex items-center justify-between bg-ebony px-4 py-3 text-xs tracking-wider text-muted uppercase transition hover:text-gold">
-            Ver pianos por perto <span aria-hidden="true">→</span>
+        <a href="{% url 'mapa' %}?piano={{ piano.id }}" class="flex items-center justify-between border-t border-line bg-ebony px-5 py-3.5 text-[0.72rem] tracking-[0.2em] text-muted uppercase transition hover:text-gold-light">
+            Ver outros pianos por perto <span aria-hidden="true">→</span>
         </a>
     </div>
     {% endif %}
 
     {% if piano.descricao %}
-    <div class="mt-3 rounded-md border-l-2 border-gold bg-ebony px-5 py-4" data-reveal>
-        <p class="text-[0.55rem] tracking-[0.2em] text-muted uppercase">Sobre este piano</p>
-        <p class="mt-2 text-[0.95rem] leading-relaxed text-ivory/80">{{ piano.descricao|linebreaksbr }}</p>
-    </div>
+    <figure class="mt-10 text-center" data-reveal>
+        <p class="ornament text-sm" aria-hidden="true">❧</p>
+        <blockquote class="mx-auto mt-5 max-w-xl font-display text-2xl leading-snug text-parchment italic">{{ piano.descricao|linebreaksbr }}</blockquote>
+    </figure>
     {% endif %}
 
     {# ── Comentários ── #}
-    <section class="mt-10" aria-labelledby="titulo-comentarios">
+    <section class="mt-14" aria-labelledby="titulo-comentarios">
         <h2 id="titulo-comentarios" class="section-title">Comentários{% if comentarios %} ({{ comentarios|length }}){% endif %}</h2>
 
-        <ul class="mt-4 divide-y divide-line/60">
+        <ul class="mt-4 divide-y divide-line">
             {% for comentario in comentarios %}
-                <li class="py-4" data-reveal>
-                    <p class="text-sm font-medium">
+                <li class="py-5" data-reveal>
+                    <p class="text-[0.72rem] tracking-[0.2em] text-gold uppercase">
                         {{ comentario.nome|default:"Anônimo" }}
-                        <time class="ml-1 text-xs font-light text-faint" datetime="{{ comentario.data|date:'c' }}">{{ comentario.data|date:"d/m/Y" }}</time>
+                        <time class="ml-2 tracking-normal text-faint normal-case italic" datetime="{{ comentario.data|date:'c' }}">{{ comentario.data|date:"d/m/Y" }}</time>
                     </p>
-                    <p class="mt-1 text-[0.92rem] leading-relaxed text-muted">{{ comentario.texto|linebreaksbr }}</p>
+                    <p class="mt-1.5 text-lg leading-relaxed text-parchment/90">{{ comentario.texto|linebreaksbr }}</p>
                 </li>
             {% empty %}
-                <li class="py-4 text-sm text-faint italic">Nenhum comentário ainda. Seja o primeiro!</li>
+                <li class="py-5 text-muted italic">Ainda não há comentários. Já tocou nesse piano? Conte como foi.</li>
             {% endfor %}
         </ul>
     </section>
 
-    <section class="mt-8" aria-labelledby="titulo-novo-comentario">
+    <section class="mt-12" aria-labelledby="titulo-novo-comentario">
         <h2 id="titulo-novo-comentario" class="section-title">Deixe um comentário</h2>
         {% partialdef form_comentario inline %}
-        <form method="post" action="{% url 'detalhe_piano' piano.id %}" class="mt-4 space-y-4" id="form-comentario"
+        <form method="post" action="{% url 'detalhe_piano' piano.id %}" class="mt-6 space-y-6" id="form-comentario"
               hx-post="{% url 'detalhe_piano' piano.id %}" hx-target="this" hx-swap="outerHTML" hx-disabled-elt="find button[type=submit]">
             {% csrf_token %}
             {% if comentario_enviado %}
-                <p role="status" class="rounded border border-ok/40 bg-ok/10 px-4 py-3 text-sm text-ok">🎹 Comentário enviado! Ele aparece aqui depois da moderação.</p>
+                <p role="status" class="border border-gold/40 bg-gold/5 px-4 py-3 text-parchment italic">Comentário recebido. Ele aparece aqui assim que for revisado.</p>
             {% endif %}
             <div>
                 <label for="id_nome" class="field-label">Nome (opcional)</label>
-                <input type="text" name="nome" id="id_nome" maxlength="100" placeholder="Seu nome" autocomplete="name"
+                <input type="text" name="nome" id="id_nome" maxlength="100" placeholder="Como quer assinar" autocomplete="name"
                        value="{{ form.nome.value|default:'' }}" class="field-input">
-                {% for erro in form.nome.errors %}<p class="mt-1 text-xs text-danger">{{ erro }}</p>{% endfor %}
+                {% for erro in form.nome.errors %}<p class="mt-1 text-sm text-danger italic">{{ erro }}</p>{% endfor %}
             </div>
             <div>
                 <label for="id_texto" class="field-label">Comentário</label>
-                <textarea name="texto" id="id_texto" rows="3" required placeholder="Como foi tocar esse piano? Ele está afinado? Qual o melhor horário?"
+                <textarea name="texto" id="id_texto" rows="3" required placeholder="O piano está afinado? Qual o melhor horário para tocar?"
                           class="field-input min-h-28 resize-y">{{ form.texto.value|default:'' }}</textarea>
-                {% for erro in form.texto.errors %}<p class="mt-1 text-xs text-danger">{{ erro }}</p>{% endfor %}
-                {% for erro in form.non_field_errors %}<p class="mt-1 text-xs text-danger">{{ erro }}</p>{% endfor %}
+                {% for erro in form.texto.errors %}<p class="mt-1 text-sm text-danger italic">{{ erro }}</p>{% endfor %}
+                {% for erro in form.non_field_errors %}<p class="mt-1 text-sm text-danger italic">{{ erro }}</p>{% endfor %}
             </div>
             <button type="submit" class="btn-gold w-full sm:w-auto">Enviar comentário</button>
         </form>
@@ -187,9 +201,9 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'pianos/js/detalhe.js' %}" defer></script>
+<script src="{% static 'pianos/js/detalhe.js' %}?v={{ static_version }}" defer></script>
 {% if piano.tem_coordenadas %}
-<script src="{% static 'pianos/vendor/leaflet/leaflet.js' %}"></script>
-<script src="{% static 'pianos/js/mapa.js' %}"></script>
+<script src="{% static 'pianos/vendor/leaflet/leaflet.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'pianos/js/mapa.js' %}?v={{ static_version }}"></script>
 {% endif %}
 {% endblock %}

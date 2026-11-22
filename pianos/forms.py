@@ -57,9 +57,9 @@ class PianoForm(forms.ModelForm):
                 'rows': 3,
                 'class': 'field-input min-h-28 resize-y',
                 'autocomplete': 'new-password',
-                'placeholder': 'Conte algo sobre este piano — horário de acesso, condições, etc. (opcional)',
+                'placeholder': 'Horário em que dá para tocar, andar, se precisa pedir na recepção...',
             }),
-            'tipo': forms.HiddenInput(attrs={'id': 'tipoFinal'}),
+            'tipo': forms.RadioSelect,
             'esta_funcionando': forms.CheckboxInput(attrs={
                 'class': 'size-5 shrink-0 cursor-pointer accent-gold',
             }),

@@ -1,22 +1,6 @@
-// Formulário público de cadastro: tipo de piano, recorte 16:10 e upload direto ao Cloudinary.
+// Formulário público de cadastro: recorte 16:10 e upload direto ao Cloudinary.
 (function () {
     'use strict';
-
-    // ── Tipo ──
-    const tipoFinal = document.getElementById('tipoFinal');
-    const subWrap = document.getElementById('subAcustico');
-
-    function updateTipo() {
-        const categoria = document.querySelector('input[name="tipo_cat"]:checked')?.value;
-        const acustico = categoria === 'acustico';
-        subWrap.classList.toggle('hidden', !acustico);
-        tipoFinal.value = acustico
-            ? (document.querySelector('input[name="tipo_sub"]:checked')?.value || 'armario')
-            : (categoria || 'digital');
-    }
-    document.querySelectorAll('input[name="tipo_cat"], input[name="tipo_sub"]')
-        .forEach(radio => radio.addEventListener('change', updateTipo));
-    updateTipo();
 
     // ── Upload direto ao Cloudinary ──
     const CLOUD = document.getElementById('cloudinary_cloud_name').value;
@@ -42,7 +26,7 @@
 
     function overlay(text) {
         const el = document.createElement('div');
-        el.className = 'absolute inset-0 grid place-items-center bg-black/55 text-[0.6rem] tracking-wide text-white';
+        el.className = 'absolute inset-0 grid place-items-center bg-black/60 text-sm text-parchment italic';
         el.textContent = text;
         return el;
     }
@@ -56,7 +40,7 @@
         slots.forEach((slot, i) => {
             if (!slot) return;
             const thumb = document.createElement('div');
-            thumb.className = 'relative aspect-[16/10] w-[clamp(96px,28vw,140px)] overflow-hidden rounded border border-line';
+            thumb.className = 'relative aspect-[16/10] w-[clamp(96px,28vw,140px)] overflow-hidden border border-gold/30';
 
             const img = document.createElement('img');
             img.src = slot.localUrl;
@@ -64,12 +48,12 @@
             img.className = 'size-full object-cover';
 
             const num = document.createElement('span');
-            num.className = 'absolute bottom-1 left-1.5 text-[0.55rem] font-semibold text-gold';
-            num.textContent = `0${i + 1}`;
+            num.className = 'absolute bottom-1 left-1.5 font-display text-sm text-gold-light italic';
+            num.textContent = ['I', 'II', 'III'][i];
 
             const remove = document.createElement('button');
             remove.type = 'button';
-            remove.className = 'absolute top-1 right-1 grid size-5 place-items-center rounded-full bg-black/75 text-xs text-white hover:bg-danger';
+            remove.className = 'absolute top-1 right-1 grid size-6 place-items-center bg-ink/80 text-sm text-parchment hover:bg-oxblood';
             remove.textContent = '×';
             remove.setAttribute('aria-label', `Remover foto ${i + 1}`);
             remove.addEventListener('click', () => {
@@ -91,7 +75,7 @@
         if (cropPending > 0) btnSubmit.textContent = 'Ajustando foto...';
         else if (pendentes > 0) btnSubmit.textContent = `Aguarde... (${pendentes} foto${pendentes > 1 ? 's' : ''})`;
         else if (falhas > 0) btnSubmit.textContent = 'Remova a foto com erro';
-        else btnSubmit.textContent = 'Enviar para aprovação';
+        else btnSubmit.textContent = 'Enviar para revisão';
 
         dropzone.classList.toggle('hidden', usados > 0);
         btnAdd.classList.toggle('hidden', usados === 0 || usados >= 3);

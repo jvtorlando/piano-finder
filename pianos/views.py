@@ -13,6 +13,16 @@ from .models import ESTADOS, TIPO_PIANO_CHOICES, Comentario, Piano
 from .forms import PianoForm, ComentarioForm
 
 
+# Tipos oferecidos no cadastro público, com uma dica curta para quem não conhece os nomes.
+# "acustico" (genérico) continua existindo para registros antigos, mas não é oferecido.
+TIPOS_FORMULARIO = [
+    ('armario', 'Armário', 'Vertical, encostado na parede'),
+    ('cauda', 'Cauda', 'Horizontal, com tampa que abre'),
+    ('digital', 'Digital', 'Elétrico, sem cordas'),
+    ('hibrido', 'Híbrido', 'Acústico com recursos digitais'),
+]
+
+
 def _eh_htmx(request):
     return request.headers.get('HX-Request') == 'true'
 
@@ -40,8 +50,7 @@ def _filtros_aplicados(request, estado, cidade, tipo):
 
 
 def lista_pianos(request):
-    publicados = Piano.objects.filter(aprovado=True)
-    pianos = publicados.order_by('ordem', '-likes', '-data_cadastro')
+    pianos = Piano.objects.filter(aprovado=True).order_by('ordem', '-likes', '-data_cadastro')
 
     estado = request.GET.get('estado', '').strip().upper()
     cidade = request.GET.get('cidade', '').strip()
@@ -67,8 +76,6 @@ def lista_pianos(request):
         'tipo_sel': tipo,
         'filtros_ativos': filtros_ativos,
         'filtros_aplicados': _filtros_aplicados(request, estado, cidade, tipo),
-        'total_publicados': publicados.count(),
-        'total_cidades': publicados.values('cidade', 'estado').distinct().count(),
     })
     # A mesma URL devolve HTML diferente com e sem HTMX; caches precisam distinguir.
     patch_vary_headers(resposta, ['HX-Request'])
@@ -112,19 +119,16 @@ def adicionar_piano(request):
             piano.foto_url_2 = form.cleaned_data.get('foto_url_2') or None
             piano.foto_url_3 = form.cleaned_data.get('foto_url_3') or None
             piano.save()
-            messages.success(request, 'Sua sugestão foi enviada! Ela será analisada e publicada em breve.')
+            messages.success(request, 'Recebemos sua indicação. O piano entra no catálogo depois de revisado.')
             return redirect('home')
     else:
         form = PianoForm()
 
-    # O formulário escolhe o tipo em duas etapas: categoria e, se acústico, armário ou cauda.
-    tipo_atual = form['tipo'].value() or ''
+    tipo_atual = form['tipo'].value() if form.is_bound else ''
     return render(request, 'pianos/adicionar.html', {
         'form': form,
-        'tipos_categoria': [('acustico', 'Acústico'), ('digital', 'Digital'), ('hibrido', 'Híbrido')],
-        'tipos_acustico': [('armario', 'Armário'), ('cauda', 'Cauda')],
-        'categoria_inicial': tipo_atual if tipo_atual in {'digital', 'hibrido'} else 'acustico',
-        'subtipo_inicial': 'cauda' if tipo_atual == 'cauda' else 'armario',
+        'tipos_formulario': TIPOS_FORMULARIO,
+        'tipo_inicial': tipo_atual if tipo_atual in dict(TIPO_PIANO_CHOICES) else 'armario',
         'cloudinary_cloud_name': settings.CLOUDINARY_STORAGE.get('CLOUD_NAME', ''),
         'cloudinary_upload_preset': settings.CLOUDINARY_UPLOAD_PRESET,
     })
@@ -152,7 +156,7 @@ def detalhe_piano(request, piano_id):
                 'comentario_enviado': enviado,
             })
         if enviado:
-            messages.success(request, 'Comentário enviado! Será publicado após moderação.')
+            messages.success(request, 'Comentário recebido. Ele aparece na página assim que for revisado.')
             return redirect('detalhe_piano', piano_id=piano_id)
 
     return render(request, 'pianos/detalhe.html', {

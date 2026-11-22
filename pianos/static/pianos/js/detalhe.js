@@ -23,8 +23,8 @@
         try { body = await response.json(); } catch (error) { /* resposta sem JSON (ex.: 429) */ }
         if (!response.ok) {
             const message = response.status === 429
-                ? 'Muitas tentativas. Aguarde um pouco.'
-                : (body.erro || 'Não foi possível concluir. Tente de novo.');
+                ? 'Muitas tentativas seguidas. Espere alguns minutos.'
+                : (body.erro || 'Não deu certo. Tente de novo.');
             throw new Error(message);
         }
         return body;
@@ -50,47 +50,50 @@
     }
 
     // ── Estrelas ──
+    // As estrelas douradas mostram sempre a média (com frações). Passar o mouse
+    // mostra a nota que será dada; depois de votar, a média é atualizada e a
+    // nota da pessoa aparece no texto ao lado.
     const rating = document.querySelector('[data-rating-url]');
     if (rating) {
+        const fill = rating.querySelector('[data-rating-fill]');
         const stars = [...rating.querySelectorAll('[data-star]')];
         const status = rating.querySelector('[data-rating-status]');
-        const paint = value => stars.forEach((star, i) => { star.dataset.on = String(i < value); });
-        const lock = value => {
-            stars.forEach((star, i) => {
-                star.disabled = true;
-                star.setAttribute('aria-checked', String(i + 1 === value));
-            });
-            paint(value);
-            status.textContent = `Você avaliou ${value}★`;
-            status.classList.replace('text-muted', 'text-gold');
-        };
+        const avg = rating.querySelector('[data-rating-avg]');
+        const total = rating.querySelector('[data-rating-total]');
+        const formatar = valor => valor.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+        let media = Number(rating.dataset.media) || 0;
+        let votou = Boolean(rating.dataset.minhaAvaliacao);
 
-        const mine = Number(rating.dataset.minhaAvaliacao || 0);
-        if (mine) {
-            lock(mine);
-        } else {
-            const initial = stars.map(star => star.dataset.on);
-            const restore = () => stars.forEach((star, i) => { star.dataset.on = initial[i]; });
-            stars.forEach(star => {
-                const value = Number(star.dataset.star);
-                star.addEventListener('mouseenter', () => paint(value));
-                star.addEventListener('focus', () => paint(value));
-                star.addEventListener('mouseleave', restore);
-                star.addEventListener('blur', restore);
-                star.addEventListener('click', async () => {
-                    stars.forEach(s => { s.disabled = true; });
-                    try {
-                        const data = await post(rating.dataset.ratingUrl, { estrelas: value });
-                        rating.querySelector('[data-rating-avg]').textContent = Number(data.estrelas).toFixed(1);
-                        rating.querySelector('[data-rating-total]').textContent = `(${data.total_avaliacoes})`;
-                        lock(value);
-                    } catch (error) {
-                        status.textContent = error.message;
-                        stars.forEach(s => { s.disabled = false; });
-                    }
-                });
+        const mostrar = valor => { fill.style.width = `${(valor / 5) * 100}%`; };
+        const voltarParaMedia = () => { if (!votou) mostrar(media); };
+
+        stars.forEach(star => {
+            const valor = Number(star.dataset.star);
+            star.addEventListener('mouseenter', () => { if (!votou) mostrar(valor); });
+            star.addEventListener('focus', () => { if (!votou) mostrar(valor); });
+            star.addEventListener('mouseleave', voltarParaMedia);
+            star.addEventListener('blur', voltarParaMedia);
+            star.addEventListener('click', async () => {
+                if (votou) return;
+                stars.forEach(s => { s.disabled = true; });
+                try {
+                    const data = await post(rating.dataset.ratingUrl, { estrelas: valor });
+                    votou = true;
+                    media = Number(data.estrelas);
+                    mostrar(media);
+                    avg.textContent = formatar(media);
+                    const n = data.total_avaliacoes;
+                    total.textContent = `(${n} ${n === 1 ? 'avaliação' : 'avaliações'})`;
+                    stars.forEach(s => s.setAttribute('aria-checked', String(Number(s.dataset.star) === valor)));
+                    status.textContent = `Sua nota: ${valor} de 5. Obrigado.`;
+                    status.classList.replace('text-muted', 'text-gold');
+                } catch (error) {
+                    mostrar(media);
+                    status.textContent = error.message;
+                    stars.forEach(s => { s.disabled = false; });
+                }
             });
-        }
+        });
     }
 
     // ── Compartilhar ──
@@ -111,7 +114,7 @@
                 await navigator.clipboard.writeText(data.url);
                 label.textContent = 'Link copiado!';
             } catch (error) {
-                label.textContent = 'Copie o link da barra';
+                label.textContent = 'Copie o link do navegador';
             }
             window.setTimeout(() => { label.textContent = 'Compartilhar'; }, 2200);
         });

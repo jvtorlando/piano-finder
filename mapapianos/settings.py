@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+import time
 
 import cloudinary
 import dj_database_url
@@ -80,6 +81,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'pianos.context_processors.site',
             ],
         },
     },
@@ -127,6 +129,14 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 TAILWIND_CLI_SRC_CSS = 'assets/tailwind.css'
 TAILWIND_CLI_DIST_CSS = 'css/site.css'
 TAILWIND_CLI_VERSION = '4.3.5'
+
+# Versão dos arquivos estáticos (?v=...). Na Vercel é o commit do deploy;
+# localmente muda a cada vez que o servidor reinicia.
+STATIC_VERSION = os.environ.get('VERCEL_GIT_COMMIT_SHA', '')[:10] or str(int(time.time()))
+
+# Vercel Web Analytics / Speed Insights: os scripts /_vercel/... só existem em
+# deploys da Vercel, então só são incluídos quando VERCEL_ENV está definido.
+VERCEL_ANALYTICS = bool(os.environ.get('VERCEL_ENV')) and env_bool('VERCEL_ANALYTICS', default=True)
 
 # ── Mídia ───────────────────────────────────────────────────────────────────
 MEDIA_URL = '/media/'

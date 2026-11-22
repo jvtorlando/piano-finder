@@ -91,14 +91,11 @@ class PianoFinderTests(TestCase):
         self.assertNotIn('<html', conteudo)
         self.assertIn('HX-Request', resposta['Vary'])
 
-    def test_lista_mostra_filtros_removiveis_e_totais(self):
+    def test_lista_mostra_filtros_removiveis(self):
         self.criar_piano(cidade='Campinas')
-        self.criar_piano(cidade='Santos')
 
         resposta = self.client.get(reverse('home'), {'tipo': 'armario', 'estado': 'SP'})
 
-        self.assertEqual(resposta.context['total_publicados'], 2)
-        self.assertEqual(resposta.context['total_cidades'], 2)
         rotulos = {f['rotulo']: f['remover_url'] for f in resposta.context['filtros_aplicados']}
         self.assertEqual(rotulos['Armário'], reverse('home') + '?estado=SP')
         self.assertEqual(rotulos['São Paulo'], reverse('home') + '?tipo=armario')
@@ -113,7 +110,7 @@ class PianoFinderTests(TestCase):
         )
 
         self.assertEqual(resposta.status_code, 200)
-        self.assertContains(resposta, 'Comentário enviado!')
+        self.assertContains(resposta, 'Comentário recebido.')
         self.assertContains(resposta, 'id="form-comentario"')
         self.assertNotContains(resposta, 'Que piano lindo!')
         self.assertNotContains(resposta, '<html')
@@ -129,7 +126,7 @@ class PianoFinderTests(TestCase):
         )
 
         self.assertEqual(resposta.status_code, 200)
-        self.assertNotContains(resposta, 'Comentário enviado!')
+        self.assertNotContains(resposta, 'Comentário recebido.')
         self.assertContains(resposta, 'text-danger')
         self.assertFalse(Comentario.objects.exists())
 
@@ -526,6 +523,44 @@ class AdminTests(TestCase):
 
         self.assertEqual(Piano.objects.filter(latitude__isnull=False).count(), 2)
         self.assertEqual(self.geocodificar.call_count, 2)
+
+
+@override_settings(DEBUG=True, SECURE_SSL_REDIRECT=False, ALLOWED_HOSTS=['testserver'])
+class PaginasPublicasTests(TestCase):
+    def test_analytics_da_vercel_so_aparece_quando_ativado(self):
+        with override_settings(VERCEL_ANALYTICS=False):
+            sem = self.client.get(reverse('home'))
+        with override_settings(VERCEL_ANALYTICS=True):
+            com = self.client.get(reverse('home'))
+
+        self.assertNotContains(sem, '/_vercel/insights/script.js')
+        self.assertContains(com, '/_vercel/insights/script.js')
+        self.assertContains(com, '/_vercel/speed-insights/script.js')
+
+    @override_settings(STATIC_VERSION='abc123')
+    def test_scripts_do_site_levam_a_versao_do_deploy(self):
+        resposta = self.client.get(reverse('home'))
+
+        self.assertContains(resposta, 'pianos/js/site.js?v=abc123')
+
+    def test_cadastro_oferece_os_quatro_tipos_com_armario_marcado(self):
+        resposta = self.client.get(reverse('adicionar_piano'))
+
+        conteudo = resposta.content.decode()
+        for tipo in ('armario', 'cauda', 'digital', 'hibrido'):
+            self.assertIn(f'name="tipo" value="{tipo}"', conteudo)
+        self.assertNotIn('name="tipo" value="acustico"', conteudo)
+        self.assertIn('name="tipo" value="armario" class="peer sr-only" checked', conteudo)
+
+    def test_estrelas_mostram_a_media_com_fracao(self):
+        piano = Piano.objects.create(
+            nome_local='Teatro', endereco='Rua A, 1', aprovado=True, estrelas=3.5, total_avaliacoes=2,
+        )
+
+        resposta = self.client.get(reverse('detalhe_piano', args=[piano.id]))
+
+        self.assertContains(resposta, 'style="width: 70%"')
+        self.assertContains(resposta, '(2 avaliações)')
 
 
 @override_settings(DEBUG=True, SECURE_SSL_REDIRECT=False, ALLOWED_HOSTS=['testserver'])

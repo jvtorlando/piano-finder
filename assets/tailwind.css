@@ -3,6 +3,10 @@
  *   python manage.py tailwind build      (uma vez)
  *   python manage.py tailwind watch      (enquanto edita)
  * O resultado vai para static/css/site.css, que é commitado.
+ *
+ * Direção visual: "old money". Serifas clássicas, dourado envelhecido,
+ * cantos retos, filetes finos e bastante respiro. Nada de cantos
+ * arredondados, sombras coloridas ou amarelo vivo.
  */
 @import "tailwindcss" source(none);
 
@@ -11,31 +15,36 @@
 @source "../pianos/forms.py";
 
 @theme {
-    --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-    --font-display: "Playfair Display", ui-serif, Georgia, serif;
+    --font-display: "Cormorant Garamond", "Cormorant", Garamond, "Times New Roman", serif;
+    --font-serif: "EB Garamond", Garamond, Georgia, serif;
+    --font-sans: "EB Garamond", Garamond, Georgia, serif;
 
-    --color-ink: #0d0d0d;
-    --color-ebony: #161616;
-    --color-coal: #1f1f1f;
-    --color-line: #2a2a2a;
-    --color-ivory: #f5f0e8;
-    --color-muted: #9a958c;
-    --color-faint: #5c5852;
-    --color-gold: #c9a84c;
-    --color-gold-light: #e8c96a;
-    --color-ok: #7fc987;
-    --color-danger: #e08080;
+    --color-ink: #0d0b08;
+    --color-ebony: #15120d;
+    --color-coal: #1e1a14;
+    --color-line: #2f291f;
+    --color-ivory: #f1e9da;
+    --color-parchment: #d9ccb3;
+    --color-muted: #a69a83;
+    --color-faint: #6b6152;
+    --color-gold: #b99a5b;
+    --color-gold-light: #d8bd85;
+    --color-oxblood: #5c1a1b;
+    --color-ok: #9cb48a;
+    --color-danger: #c98a7e;
 
-    --animate-fade-up: fade-up 0.5s ease both;
-    --animate-keys: keys 0.5s ease both;
+    --radius-none: 0;
+
+    --animate-fade-up: fade-up 0.6s ease both;
+    --animate-keys: keys 0.6s ease both;
 
     @keyframes fade-up {
-        from { opacity: 0; transform: translateY(14px); }
+        from { opacity: 0; transform: translateY(12px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
     @keyframes keys {
-        from { opacity: 0; transform: translateY(-18px); }
+        from { opacity: 0; transform: translateY(-14px); }
         to { opacity: 1; transform: translateY(0); }
     }
 }
@@ -44,10 +53,15 @@
     html {
         scroll-behavior: smooth;
         -webkit-tap-highlight-color: transparent;
+        font-size: 17px;
     }
 
     body {
-        @apply bg-ink font-sans font-light text-ivory antialiased;
+        @apply bg-ink font-serif text-ivory antialiased;
+        font-feature-settings: "kern", "liga", "onum";
+        /* Textura sutil de papel envelhecido sobre o fundo escuro. */
+        background-image: radial-gradient(ellipse at top, rgba(185, 154, 91, 0.06), transparent 60%);
+        background-attachment: fixed;
     }
 
     ::selection {
@@ -55,92 +69,112 @@
     }
 
     :focus-visible {
-        @apply outline-2 outline-offset-2 outline-gold;
+        @apply outline-1 outline-offset-4 outline-gold;
     }
 }
 
 @layer components {
-    /* Rótulo pequeno em caixa alta, usado acima de títulos e seções. */
+    /* Rótulo em versalete acima de títulos e seções. */
     .eyebrow {
-        @apply text-[0.65rem] font-medium tracking-[0.3em] text-gold uppercase;
+        @apply font-serif text-[0.72rem] tracking-[0.32em] text-gold uppercase;
     }
 
+    /* Botão principal: contornado, enche de dourado no hover. */
     .btn-gold {
-        @apply inline-flex items-center justify-center gap-2 rounded-sm bg-gold px-6 py-3.5
-            text-sm font-medium tracking-wider text-ink uppercase transition
-            hover:bg-gold-light active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60;
+        @apply inline-flex items-center justify-center gap-2 border border-gold bg-gold/5 px-7 py-3
+            font-serif text-[0.8rem] tracking-[0.22em] text-gold-light uppercase transition duration-300
+            hover:bg-gold hover:text-ink disabled:cursor-not-allowed disabled:opacity-50;
     }
 
     .btn-ghost {
-        @apply inline-flex items-center justify-center gap-2 rounded-sm border border-line px-5 py-3.5
-            text-sm text-muted transition hover:border-ivory hover:text-ivory;
+        @apply inline-flex items-center justify-center gap-2 border border-line px-6 py-3
+            font-serif text-[0.8rem] tracking-[0.18em] text-muted uppercase transition duration-300
+            hover:border-parchment hover:text-ivory;
     }
 
+    /* Opção de filtro: texto em versalete com filete inferior quando ativa. */
     .chip {
-        @apply inline-flex cursor-pointer items-center gap-1.5 rounded-sm border border-line px-3 py-1.5
-            text-[0.65rem] font-medium tracking-wider text-muted uppercase transition
-            hover:border-gold hover:text-gold;
+        @apply inline-flex cursor-pointer items-center gap-1.5 border border-line px-3 py-1.5
+            font-serif text-[0.72rem] tracking-[0.14em] text-muted uppercase transition
+            hover:border-gold/70 hover:text-gold-light;
     }
 
     .chip-on {
-        @apply border-gold bg-gold/10 text-gold;
+        @apply border-gold bg-gold/10 text-gold-light;
     }
 
     .field-label {
-        @apply mb-2 block text-[0.68rem] font-medium tracking-[0.15em] text-muted uppercase;
+        @apply mb-2 block font-serif text-[0.72rem] tracking-[0.2em] text-muted uppercase;
     }
 
     .field-input {
-        @apply min-h-12 w-full appearance-none rounded-sm border border-line bg-ebony px-4 py-3
-            text-[0.95rem] font-light text-ivory transition outline-none placeholder:text-faint
+        @apply min-h-12 w-full appearance-none border-0 border-b border-line bg-transparent px-1 py-2.5
+            font-serif text-lg text-ivory transition outline-none placeholder:text-faint placeholder:italic
             focus:border-gold;
     }
 
+    textarea.field-input {
+        @apply border border-line bg-ebony/60 px-3;
+    }
+
+    /* Título de seção com filete fino dourado. */
     .section-title {
-        @apply flex items-center gap-3 text-[0.62rem] font-medium tracking-[0.28em] text-gold uppercase
-            after:h-px after:flex-1 after:bg-line;
+        @apply flex items-center gap-4 font-serif text-[0.72rem] tracking-[0.3em] text-gold uppercase
+            after:h-px after:flex-1 after:bg-gradient-to-r after:from-gold/40 after:to-transparent;
+    }
+
+    /* Filete duplo com ornamento central. */
+    .ornament {
+        @apply mx-auto flex max-w-xs items-center gap-3 text-gold/70
+            before:h-px before:flex-1 before:bg-gradient-to-l before:from-gold/50 before:to-transparent
+            after:h-px after:flex-1 after:bg-gradient-to-r after:from-gold/50 after:to-transparent;
     }
 
     /* Teclas decorativas do topo. */
     .key-white {
-        @apply h-16 w-5 shrink-0 rounded-b-[5px] bg-ivory shadow-lg shadow-black/50 sm:h-20 sm:w-6;
+        @apply h-16 w-5 shrink-0 bg-gradient-to-b from-[#efe6d4] to-[#d9ccb3] shadow-md shadow-black/60 sm:h-20 sm:w-6;
     }
 
     .key-black {
-        @apply z-10 -mx-2 h-10 w-3.5 shrink-0 rounded-b-[3px] border border-[#333] bg-coal sm:h-12;
+        @apply z-10 -mx-2 h-10 w-3.5 shrink-0 border border-[#2a241b] bg-gradient-to-b from-[#1a1611] to-[#0b0906] sm:h-12;
     }
 }
 
 /* Leaflet no tema escuro do site. */
 .leaflet-container {
-    @apply bg-ebony font-sans;
+    @apply bg-ebony font-serif;
 }
 
 /* Inverte os tiles claros do OpenStreetMap para um mapa escuro e quente. */
 .pf-tiles-escuros {
-    filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.35) sepia(0.15);
+    filter: invert(1) hue-rotate(180deg) brightness(0.82) contrast(0.88) saturate(0.25) sepia(0.25);
 }
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-    @apply bg-coal text-ivory shadow-2xl shadow-black/60;
+    @apply rounded-none bg-ebony text-ivory shadow-2xl shadow-black/70;
 }
 
 .leaflet-popup-content-wrapper {
-    @apply rounded-md border border-line;
+    @apply border border-gold/40;
 }
 
 .leaflet-popup-content {
-    @apply m-3 text-sm leading-normal;
+    @apply m-3 font-serif text-base leading-normal;
 }
 
 .leaflet-container a.leaflet-popup-close-button {
     @apply text-muted hover:text-ivory;
 }
 
+.leaflet-bar,
+.leaflet-bar a {
+    @apply !rounded-none;
+}
+
 .leaflet-bar a,
 .leaflet-bar a:hover {
-    @apply border-line bg-coal text-ivory;
+    @apply border-line bg-ebony text-gold;
 }
 
 .leaflet-control-attribution {
@@ -155,8 +189,8 @@
 @media (prefers-reduced-motion: no-preference) {
     [data-reveal] {
         opacity: 0;
-        transform: translateY(18px);
-        transition: opacity 0.5s ease, transform 0.5s ease;
+        transform: translateY(16px);
+        transition: opacity 0.7s ease, transform 0.7s ease;
     }
 
     [data-reveal].is-visible {

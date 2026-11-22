@@ -111,8 +111,8 @@
         const el = document.createElement('div');
         el.setAttribute('role', tone === 'erro' ? 'alert' : 'status');
         el.className = tone === 'erro'
-            ? 'pointer-events-auto max-w-md animate-fade-up rounded border border-danger/40 bg-[#2a1414]/95 px-4 py-3 text-sm text-danger shadow-xl shadow-black/40 backdrop-blur'
-            : 'pointer-events-auto max-w-md animate-fade-up rounded border border-ok/40 bg-[#132016]/95 px-4 py-3 text-sm text-ok shadow-xl shadow-black/40 backdrop-blur';
+            ? 'pointer-events-auto max-w-md animate-fade-up border border-danger/50 bg-ebony/95 px-5 py-3 text-center text-danger italic shadow-2xl shadow-black/60 backdrop-blur'
+            : 'pointer-events-auto max-w-md animate-fade-up border border-gold/50 bg-ebony/95 px-5 py-3 text-center text-parchment italic shadow-2xl shadow-black/60 backdrop-blur';
         el.textContent = message;
         container.appendChild(el);
         window.setTimeout(() => el.remove(), 5000);
@@ -132,10 +132,10 @@
     document.addEventListener('htmx:responseError', event => {
         const status = event.detail.xhr.status;
         toast(status === 429
-            ? 'Muitas tentativas em pouco tempo. Aguarde um pouco e tente de novo.'
-            : 'Algo deu errado. Tente novamente em instantes.');
+            ? 'Muitas tentativas seguidas. Espere alguns minutos e tente de novo.'
+            : 'Algo deu errado. Tente de novo daqui a pouco.');
     });
-    document.addEventListener('htmx:sendError', () => toast('Sem conexão. Verifique sua internet.'));
+    document.addEventListener('htmx:sendError', () => toast('Parece que a internet caiu. Confira a conexão.'));
 
     // Filtros vazios não entram na URL (?tipo=digital em vez de ?tipo=digital&cidade=&estado=).
     document.addEventListener('htmx:configRequest', event => {

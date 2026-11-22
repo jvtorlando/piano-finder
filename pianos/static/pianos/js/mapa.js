@@ -11,7 +11,7 @@
     function pin(destaque) {
         return L.divIcon({
             className: '',
-            html: `<span class="block size-7 -translate-y-1/2 rounded-full rounded-br-none rotate-45 border-2 border-ink ${destaque ? 'bg-gold-light' : 'bg-gold'} shadow-lg shadow-black/60"><span class="m-auto mt-[7px] block size-2.5 rounded-full bg-ink"></span></span>`,
+            html: `<span class="block size-7 -translate-y-1/2 rounded-full rounded-br-none rotate-45 border border-ink ${destaque ? 'bg-gold-light' : 'bg-gold'} shadow-lg shadow-black/60"><span class="m-auto mt-[7px] block size-2.5 rounded-full bg-ink"></span></span>`,
             iconSize: [28, 28],
             iconAnchor: [14, 28],
             popupAnchor: [0, -30],
@@ -33,18 +33,18 @@
 
     function popupHtml(p) {
         const foto = p.foto
-            ? `<img src="${escapeHtml(p.foto)}" alt="" class="mb-2 aspect-[16/10] w-full rounded object-cover" loading="lazy">`
+            ? `<img src="${escapeHtml(p.foto)}" alt="" class="mb-3 aspect-[16/10] w-full object-cover sepia-[0.15]" loading="lazy">`
             : '';
         const nota = p.estrelas ? `<span><span class="text-gold">★</span> ${p.estrelas.toFixed(1)}</span>` : '';
         const situacao = p.funcionando
-            ? '<span class="text-ok">✓ Funcionando</span>'
-            : '<span class="text-danger">✕ Manutenção</span>';
+            ? '<span class="text-ok">Funcionando</span>'
+            : '<span class="text-danger">Em manutenção</span>';
         return `${foto}
-            <div class="text-[0.55rem] font-medium tracking-[0.2em] text-gold uppercase">${escapeHtml(p.tipo)} · ${escapeHtml(p.cidade)}/${escapeHtml(p.estado)}</div>
-            <div class="mt-1 font-display text-base leading-tight font-bold text-ivory">${escapeHtml(p.nome)}</div>
-            <div class="mt-0.5 text-xs text-muted">${escapeHtml(p.endereco)}</div>
-            <div class="mt-2 flex gap-3 text-xs">${situacao}${nota}</div>
-            <a href="${escapeHtml(p.url)}" class="mt-3 block rounded-sm bg-gold px-3 py-2 text-center text-xs font-medium tracking-wider !text-ink uppercase">Ver piano</a>`;
+            <div class="text-[0.62rem] tracking-[0.22em] text-gold uppercase">${escapeHtml(p.tipo)} · ${escapeHtml(p.cidade)}/${escapeHtml(p.estado)}</div>
+            <div class="mt-1 font-display text-xl leading-tight font-medium text-ivory">${escapeHtml(p.nome)}</div>
+            <div class="mt-0.5 text-sm text-muted italic">${escapeHtml(p.endereco)}</div>
+            <div class="mt-2 flex gap-3 text-sm italic">${situacao}${nota}</div>
+            <a href="${escapeHtml(p.url)}" class="mt-3 block border border-gold px-3 py-2 text-center text-[0.72rem] tracking-[0.2em] !text-gold-light uppercase hover:bg-gold hover:!text-ink">Ver o piano</a>`;
     }
 
     function criarMapa(el, opcoes = {}) {
@@ -117,11 +117,11 @@
 
         botao?.addEventListener('click', () => {
             if (!('geolocation' in navigator)) {
-                status.textContent = 'Seu navegador não permite localização.';
+                status.textContent = 'Este navegador não informa a localização.';
                 return;
             }
             botao.disabled = true;
-            status.textContent = 'Procurando sua localização…';
+            status.textContent = 'Procurando onde você está...';
             navigator.geolocation.getCurrentPosition(posicao => {
                 botao.disabled = false;
                 const eu = { lat: posicao.coords.latitude, lng: posicao.coords.longitude };
@@ -143,13 +143,13 @@
                 const maisProximos = ordenados.slice(0, 3).map(p => [p.lat, p.lng]);
                 mapa.fitBounds(L.latLngBounds([[eu.lat, eu.lng], ...maisProximos]).pad(0.3), { maxZoom: 15 });
                 status.textContent = ordenados.length
-                    ? `O piano mais perto fica a ${formatarDistancia(ordenados[0].km)}.`
-                    : 'Ainda não há pianos no mapa.';
+                    ? `O mais perto fica a ${formatarDistancia(ordenados[0].km)} daqui.`
+                    : 'Nenhum piano no mapa ainda.';
             }, erro => {
                 botao.disabled = false;
                 status.textContent = erro.code === erro.PERMISSION_DENIED
-                    ? 'Permita o acesso à localização para ver os pianos mais perto.'
-                    : 'Não foi possível descobrir sua localização agora.';
+                    ? 'Para ver os pianos mais perto, permita o acesso à localização.'
+                    : 'Não consegui descobrir sua localização agora. Tente de novo em instantes.';
             }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
         });
     }

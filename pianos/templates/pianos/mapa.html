@@ -1,55 +1,55 @@
 {% extends "pianos/base.html" %}
 {% load static %}
 
-{% block title %}Mapa de pianos públicos — Piano Finder{% endblock %}
+{% block title %}Mapa de pianos públicos · Piano Finder{% endblock %}
 {% block description %}Veja no mapa os pianos públicos cadastrados no Piano Finder e encontre o mais perto de você.{% endblock %}
-{% block og_title %}Mapa de pianos públicos — Piano Finder{% endblock %}
+{% block og_title %}Mapa de pianos públicos · Piano Finder{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{% static 'pianos/vendor/leaflet/leaflet.css' %}">
+<link rel="stylesheet" href="{% static 'pianos/vendor/leaflet/leaflet.css' %}?v={{ static_version }}">
 {% endblock %}
 
 {% block content %}
-<div class="grid md:h-[calc(100dvh-57px)] md:grid-cols-[22rem_minmax(0,1fr)] lg:grid-cols-[26rem_minmax(0,1fr)]">
+<div class="grid md:h-[calc(100dvh-61px)] md:grid-cols-[22rem_minmax(0,1fr)] lg:grid-cols-[26rem_minmax(0,1fr)]">
 
     {# ── Lista lateral ── #}
-    <aside class="order-2 flex min-h-0 flex-col border-line/60 md:order-1 md:border-r">
-        <div class="border-b border-line/60 px-5 py-5">
-            <p class="eyebrow">Mapa</p>
-            <h1 class="mt-1 font-display text-2xl font-bold">Pianos <em class="text-gold">perto de você</em></h1>
-            <button type="button" id="perto-de-mim" class="btn-gold mt-4 w-full">
-                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+    <aside class="order-2 flex min-h-0 flex-col border-gold/15 md:order-1 md:border-r">
+        <div class="border-b border-gold/15 px-6 py-6">
+            <p class="eyebrow">O mapa</p>
+            <h1 class="mt-2 font-display text-3xl font-medium">Pianos <em class="font-normal text-gold-light">perto de você</em></h1>
+            <button type="button" id="perto-de-mim" class="btn-gold mt-5 w-full">
+                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
                 Perto de mim
             </button>
-            <p id="status-localizacao" class="mt-2 min-h-5 text-xs text-muted" aria-live="polite"></p>
+            <p id="status-localizacao" class="mt-3 min-h-5 text-sm text-muted italic" aria-live="polite"></p>
         </div>
 
-        <ul id="lista-mapa" class="min-h-0 flex-1 divide-y divide-line/60 overflow-y-auto">
+        <ul id="lista-mapa" class="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
             {% for p in pontos %}
             <li>
-                <button type="button" data-ponto="{{ p.id }}" class="flex w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-ebony focus-visible:bg-ebony">
+                <button type="button" data-ponto="{{ p.id }}" class="flex w-full items-center gap-4 px-6 py-3.5 text-left transition hover:bg-ebony focus-visible:bg-ebony">
                     {% if p.foto %}
-                        <img src="{{ p.foto }}" alt="" class="aspect-[16/10] w-20 shrink-0 rounded object-cover" loading="lazy">
+                        <img src="{{ p.foto }}" alt="" class="aspect-[16/10] w-20 shrink-0 object-cover sepia-[0.15]" loading="lazy">
                     {% else %}
-                        <span class="grid aspect-[16/10] w-20 shrink-0 place-items-center rounded bg-coal font-display text-xl text-faint" aria-hidden="true">♩</span>
+                        <span class="grid aspect-[16/10] w-20 shrink-0 place-items-center bg-coal font-display text-2xl text-gold/30" aria-hidden="true">♩</span>
                     {% endif %}
                     <span class="min-w-0 flex-1">
-                        <span class="block truncate text-sm font-medium">{{ p.nome }}</span>
-                        <span class="block truncate text-xs text-muted">{{ p.endereco }}</span>
-                        <span class="mt-0.5 block text-[0.6rem] tracking-[0.18em] text-gold uppercase">{{ p.cidade }} · {{ p.estado }}</span>
+                        <span class="block truncate font-display text-xl leading-tight">{{ p.nome }}</span>
+                        <span class="block truncate text-sm text-muted italic">{{ p.endereco }}</span>
+                        <span class="mt-0.5 block text-[0.66rem] tracking-[0.2em] text-gold uppercase">{{ p.cidade }} · {{ p.estado }}</span>
                     </span>
-                    <span class="shrink-0 text-xs text-gold" data-distancia></span>
+                    <span class="shrink-0 font-display text-lg text-gold-light italic" data-distancia></span>
                 </button>
             </li>
             {% empty %}
-            <li class="px-5 py-10 text-center text-sm text-muted italic">Ainda não há pianos com localização no mapa.</li>
+            <li class="px-6 py-12 text-center text-muted italic">Nenhum piano tem localização no mapa ainda.</li>
             {% endfor %}
         </ul>
 
         {% if fora_do_mapa %}
-        <p class="border-t border-line/60 px-5 py-3 text-xs text-faint">
-            {{ fora_do_mapa }} piano{{ fora_do_mapa|pluralize }} ainda sem localização no mapa.
-            <a href="{% url 'home' %}" class="text-muted underline hover:text-ivory">Ver todos na lista</a>
+        <p class="border-t border-gold/15 px-6 py-3.5 text-sm text-faint italic">
+            {{ fora_do_mapa }} piano{{ fora_do_mapa|pluralize }} ainda sem localização.
+            <a href="{% url 'home' %}" class="text-muted underline decoration-gold/40 underline-offset-4 hover:text-ivory">Ver o catálogo completo</a>
         </p>
         {% endif %}
     </aside>
@@ -64,6 +64,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'pianos/vendor/leaflet/leaflet.js' %}"></script>
-<script src="{% static 'pianos/js/mapa.js' %}"></script>
+<script src="{% static 'pianos/vendor/leaflet/leaflet.js' %}?v={{ static_version }}"></script>
+<script src="{% static 'pianos/js/mapa.js' %}?v={{ static_version }}"></script>
 {% endblock %}
