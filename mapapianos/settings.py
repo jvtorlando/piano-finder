@@ -83,14 +83,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mapapianos.wsgi.application'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+def database_config():
+    # Uma DATABASE_URL vazia (como no .env.example) conta como ausente e usa SQLite.
+    url = os.environ.get('DATABASE_URL', '').strip()
+    return dj_database_url.parse(
+        url or f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
     )
+
+
+DATABASES = {
+    'default': database_config(),
 }
 
-if not DEBUG and not os.environ.get('DATABASE_URL'):
+if not DEBUG and not os.environ.get('DATABASE_URL', '').strip():
     raise ImproperlyConfigured('DATABASE_URL is required when DEBUG is False.')
 
 AUTH_PASSWORD_VALIDATORS = [

@@ -1,12 +1,15 @@
+import os
 from unittest.mock import ANY, patch
 
 from django.contrib.admin.sites import AdminSite
 from django.conf import settings
 from django.core.cache import cache
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase, override_settings
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.test.client import RequestFactory
 from django.urls import reverse
+
+from mapapianos.settings import database_config
 
 from .admin import PianoAdmin
 from .forms_admin import MAX_IMAGE_SIZE, PianoAdminForm
@@ -351,3 +354,19 @@ class PianoFormTests(TestCase):
 
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data['estado'], 'PR')
+
+
+class DatabaseConfigTests(SimpleTestCase):
+    def test_database_url_vazia_usa_sqlite(self):
+        for valor in ('', '   '):
+            with self.subTest(valor=valor), patch.dict(os.environ, {'DATABASE_URL': valor}):
+                config = database_config()
+                self.assertEqual(config['ENGINE'], 'django.db.backends.sqlite3')
+                self.assertTrue(str(config['NAME']).endswith('db.sqlite3'))
+
+    def test_database_url_preenchida_e_respeitada(self):
+        url = 'postgres://usuario:senha@localhost:5432/pianos'
+        with patch.dict(os.environ, {'DATABASE_URL': url}):
+            config = database_config()
+        self.assertEqual(config['ENGINE'], 'django.db.backends.postgresql')
+        self.assertEqual(config['NAME'], 'pianos')

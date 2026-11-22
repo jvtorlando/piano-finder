@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+
+- local setup failing with an unconfigured database when `.env` contains an empty `DATABASE_URL`, as copied from `.env.example`; an empty value now falls back to SQLite.
+
 ## [1.0.0] - 2026-08-06
 
 First formal public release of Piano Finder as a production application and portfolio project.
