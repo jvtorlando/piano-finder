@@ -44,7 +44,9 @@ Piano Finder first grew as a TikTok project documenting public pianos. The respo
 ## Features
 
 - public catalog that displays approved pianos only;
-- filtering by Brazilian state, city, and piano type;
+- filtering by Brazilian state, city, and piano type, updated in place with HTMX;
+- interactive map with a "near me" search that sorts pianos by distance;
+- automatic address-to-coordinates lookup through OpenStreetMap Nominatim;
 - community submissions with up to three images;
 - responsive 16:10 image editor with drag, zoom, keyboard, and touch controls;
 - normalized 1600×1000 image output for consistent catalog cards on every screen size;
@@ -53,7 +55,7 @@ Piano Finder first grew as a TikTok project documenting public pianos. The respo
 - likes, dislikes, and one-to-five-star ratings;
 - comments subject to moderation;
 - automatic selection of the three most-liked pianos as featured locations;
-- Django Admin interface for searching, reviewing, and moderating submissions;
+- moderation dashboard built on Django Admin and Unfold, with review queues, pending badges, and one-click approval;
 - edge-to-edge mobile image framing without changing the desktop and tablet presentation.
 
 ## Architecture
@@ -67,6 +69,8 @@ flowchart LR
     U -->|Direct image upload| C[Cloudinary]
     C -->|Validated HTTPS URLs| V
     C -->|Optimized image delivery| U
+    V -->|Address geocoding from the admin| O[OpenStreetMap Nominatim]
+    U -->|Map tiles| T[OpenStreetMap tiles]
 ```
 
 Hostinger is the domain registrar and DNS provider; the application itself runs on Vercel. PostgreSQL data is hosted by Neon, while images are stored outside the serverless filesystem in Cloudinary. During local development, Django uses SQLite when `DATABASE_URL` is not configured.
@@ -116,7 +120,9 @@ Piano submissions, comments, votes, and ratings have IP-based request limits. Th
 | --- | --- |
 | Backend | Python 3.14, Django 6 |
 | Database | PostgreSQL, Neon, SQLite |
-| Frontend | HTML, CSS, JavaScript, Canvas API |
+| Frontend | Django templates, Tailwind CSS v4, HTMX, Leaflet, JavaScript, Canvas API |
+| Admin | Django Admin with Unfold |
+| Maps | Leaflet, OpenStreetMap tiles, Nominatim geocoding |
 | Images | Cloudinary |
 | Infrastructure | Vercel, Hostinger DNS, Neon, Cloudinary, WhiteNoise |
 | Quality | Django TestCase, GitHub Actions, migrations, Git, GitHub |
@@ -141,7 +147,13 @@ Run it locally with:
 python manage.py test
 ```
 
-The project currently has **19 automated tests**. GitHub Actions runs the same suite on pushes to `main` and on pull requests.
+Optional sample data for local development:
+
+```bash
+python manage.py carregar_exemplos
+```
+
+The project currently has **37 automated tests**. GitHub Actions runs the same suite on pushes to `main` and on pull requests.
 
 ## Running locally
 
@@ -239,6 +251,7 @@ The unsigned Cloudinary preset is intentionally public for browser uploads. Its 
 
 ```text
 .github/       continuous integration workflow
+assets/        Tailwind CSS source (compiled into static/css/site.css)
 CHANGELOG.md   version-by-version release history
 docs/images/   README screenshots and community evidence
 mapapianos/    settings, URLs, and WSGI/ASGI entry points
@@ -255,12 +268,11 @@ pyproject.toml project metadata, dependencies, and Vercel build setup
 - moderation depends on the administrative interface;
 - the in-memory rate-limit cache is not shared across serverless instances;
 - duplicate piano submissions are not yet detected automatically;
-- locations do not yet store latitude and longitude in the database;
+- geocoding depends on OpenStreetMap address coverage; unmatched addresses need manual coordinates in the admin;
 - community metrics shown in the README are dated snapshots, not live analytics.
 
 ## Next steps
 
-- add geographic search and map visualization;
 - record when each piano was last verified;
 - add duplicate-submission detection;
 - move rate-limit counters to a shared store such as Redis;

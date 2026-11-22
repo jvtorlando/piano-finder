@@ -8,6 +8,10 @@
 {% block og_image %}{% if piano.foto_url %}{{ piano.foto_url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
 {% block twitter_card %}summary_large_image{% endblock %}
 
+{% block head %}
+{% if piano.tem_coordenadas %}<link rel="stylesheet" href="{% static 'pianos/vendor/leaflet/leaflet.css' %}">{% endif %}
+{% endblock %}
+
 {% block nav_actions %}
     <a href="{% url 'home' %}" class="text-sm text-muted transition hover:text-ivory">← Todos os pianos</a>
 {% endblock %}
@@ -116,6 +120,17 @@
         </div>
     </dl>
 
+    {% if piano.tem_coordenadas %}
+    <div class="mt-3 overflow-hidden rounded-md border border-line" data-reveal>
+        <div id="mapa-piano" class="aspect-[16/9] w-full bg-ebony sm:aspect-[21/9]"
+             data-lat="{{ piano.latitude|stringformat:'s' }}" data-lng="{{ piano.longitude|stringformat:'s' }}" data-nome="{{ piano.nome_local }}"
+             role="region" aria-label="Localização de {{ piano.nome_local }} no mapa"></div>
+        <a href="{% url 'mapa' %}?piano={{ piano.id }}" class="flex items-center justify-between bg-ebony px-4 py-3 text-xs tracking-wider text-muted uppercase transition hover:text-gold">
+            Ver pianos por perto <span aria-hidden="true">→</span>
+        </a>
+    </div>
+    {% endif %}
+
     {% if piano.descricao %}
     <div class="mt-3 rounded-md border-l-2 border-gold bg-ebony px-5 py-4" data-reveal>
         <p class="text-[0.55rem] tracking-[0.2em] text-muted uppercase">Sobre este piano</p>
@@ -173,4 +188,8 @@
 
 {% block scripts %}
 <script src="{% static 'pianos/js/detalhe.js' %}" defer></script>
+{% if piano.tem_coordenadas %}
+<script src="{% static 'pianos/vendor/leaflet/leaflet.js' %}"></script>
+<script src="{% static 'pianos/js/mapa.js' %}"></script>
+{% endif %}
 {% endblock %}

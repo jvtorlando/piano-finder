@@ -111,6 +111,46 @@
     }
 }
 
+/* Leaflet no tema escuro do site. */
+.leaflet-container {
+    @apply bg-ebony font-sans;
+}
+
+/* Inverte os tiles claros do OpenStreetMap para um mapa escuro e quente. */
+.pf-tiles-escuros {
+    filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.35) sepia(0.15);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+    @apply bg-coal text-ivory shadow-2xl shadow-black/60;
+}
+
+.leaflet-popup-content-wrapper {
+    @apply rounded-md border border-line;
+}
+
+.leaflet-popup-content {
+    @apply m-3 text-sm leading-normal;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+    @apply text-muted hover:text-ivory;
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover {
+    @apply border-line bg-coal text-ivory;
+}
+
+.leaflet-control-attribution {
+    @apply !bg-ink/70 !text-faint;
+}
+
+.leaflet-control-attribution a {
+    @apply !text-muted;
+}
+
 /* Elementos que aparecem suavemente quando entram na tela (pianos/js/site.js). */
 @media (prefers-reduced-motion: no-preference) {
     [data-reveal] {

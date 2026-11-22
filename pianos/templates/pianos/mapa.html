@@ -1,0 +1,69 @@
+{% extends "pianos/base.html" %}
+{% load static %}
+
+{% block title %}Mapa de pianos públicos — Piano Finder{% endblock %}
+{% block description %}Veja no mapa os pianos públicos cadastrados no Piano Finder e encontre o mais perto de você.{% endblock %}
+{% block og_title %}Mapa de pianos públicos — Piano Finder{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{% static 'pianos/vendor/leaflet/leaflet.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="grid md:h-[calc(100dvh-57px)] md:grid-cols-[22rem_minmax(0,1fr)] lg:grid-cols-[26rem_minmax(0,1fr)]">
+
+    {# ── Lista lateral ── #}
+    <aside class="order-2 flex min-h-0 flex-col border-line/60 md:order-1 md:border-r">
+        <div class="border-b border-line/60 px-5 py-5">
+            <p class="eyebrow">Mapa</p>
+            <h1 class="mt-1 font-display text-2xl font-bold">Pianos <em class="text-gold">perto de você</em></h1>
+            <button type="button" id="perto-de-mim" class="btn-gold mt-4 w-full">
+                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+                Perto de mim
+            </button>
+            <p id="status-localizacao" class="mt-2 min-h-5 text-xs text-muted" aria-live="polite"></p>
+        </div>
+
+        <ul id="lista-mapa" class="min-h-0 flex-1 divide-y divide-line/60 overflow-y-auto">
+            {% for p in pontos %}
+            <li>
+                <button type="button" data-ponto="{{ p.id }}" class="flex w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-ebony focus-visible:bg-ebony">
+                    {% if p.foto %}
+                        <img src="{{ p.foto }}" alt="" class="aspect-[16/10] w-20 shrink-0 rounded object-cover" loading="lazy">
+                    {% else %}
+                        <span class="grid aspect-[16/10] w-20 shrink-0 place-items-center rounded bg-coal font-display text-xl text-faint" aria-hidden="true">♩</span>
+                    {% endif %}
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate text-sm font-medium">{{ p.nome }}</span>
+                        <span class="block truncate text-xs text-muted">{{ p.endereco }}</span>
+                        <span class="mt-0.5 block text-[0.6rem] tracking-[0.18em] text-gold uppercase">{{ p.cidade }} · {{ p.estado }}</span>
+                    </span>
+                    <span class="shrink-0 text-xs text-gold" data-distancia></span>
+                </button>
+            </li>
+            {% empty %}
+            <li class="px-5 py-10 text-center text-sm text-muted italic">Ainda não há pianos com localização no mapa.</li>
+            {% endfor %}
+        </ul>
+
+        {% if fora_do_mapa %}
+        <p class="border-t border-line/60 px-5 py-3 text-xs text-faint">
+            {{ fora_do_mapa }} piano{{ fora_do_mapa|pluralize }} ainda sem localização no mapa.
+            <a href="{% url 'home' %}" class="text-muted underline hover:text-ivory">Ver todos na lista</a>
+        </p>
+        {% endif %}
+    </aside>
+
+    {# ── Mapa ── #}
+    <div class="relative order-1 h-[60dvh] md:order-2 md:h-auto">
+        <div id="mapa-geral" class="absolute inset-0 bg-ebony" role="region" aria-label="Mapa de pianos públicos"></div>
+    </div>
+</div>
+
+{{ pontos|json_script:"pontos-mapa" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'pianos/vendor/leaflet/leaflet.js' %}"></script>
+<script src="{% static 'pianos/js/mapa.js' %}"></script>
+{% endblock %}

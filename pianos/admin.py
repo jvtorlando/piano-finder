@@ -20,10 +20,14 @@ from unfold.enums import ActionVariant
 from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
 
 from .forms_admin import PianoAdminForm
+from .geocoding import geocodificar
 from .models import Comentario, Piano
 
 
 logger = logging.getLogger(__name__)
+
+CAMPOS_DE_ENDERECO = {'nome_local', 'endereco', 'cidade', 'estado'}
+LIMITE_GEOCODIFICACAO_EM_LOTE = 8
 
 admin.site.index_template = 'admin/pianos_dashboard.html'
 admin.site.index_title = 'Painel'
@@ -54,7 +58,7 @@ class PianoAdmin(ModelAdmin):
 
     list_display = (
         'thumb', 'local', 'status', 'tipo_label', 'esta_funcionando',
-        'destaque', 'likes', 'nota', 'enviado',
+        'no_mapa', 'destaque', 'likes', 'nota', 'enviado',
     )
     list_display_links = ('thumb', 'local')
     list_filter = (
@@ -70,10 +74,10 @@ class PianoAdmin(ModelAdmin):
     ordering = ('aprovado', '-data_cadastro')
     date_hierarchy = 'data_cadastro'
     warn_unsaved_form = True
-    actions = ['aprovar_pianos', 'reprovar_pianos']
+    actions = ['aprovar_pianos', 'reprovar_pianos', 'buscar_coordenadas']
     actions_detail = ['aprovar_este', 'ver_no_site']
     readonly_fields = (
-        'foto_url', 'foto_url_2', 'foto_url_3', 'preview_fotos',
+        'foto_url', 'foto_url_2', 'foto_url_3', 'preview_fotos', 'mapa_link',
         'likes', 'dislikes', 'estrelas', 'total_avaliacoes', 'data_cadastro',
     )
 
@@ -85,6 +89,14 @@ class PianoAdmin(ModelAdmin):
         ('Fotos', {
             'classes': ['tab'],
             'fields': ('preview_fotos', 'upload_foto', 'foto_url', 'foto_url_2', 'foto_url_3'),
+        }),
+        ('Localização', {
+            'classes': ['tab'],
+            'description': (
+                'As coordenadas são buscadas automaticamente pelo endereço quando o piano é salvo. '
+                'Se o ponto ficar errado, corrija os números aqui (ex.: copiando do Google Maps).'
+            ),
+            'fields': (('latitude', 'longitude'), 'mapa_link'),
         }),
         ('Publicação', {
             'classes': ['tab'],
@@ -108,6 +120,20 @@ class PianoAdmin(ModelAdmin):
         return mark_safe(
             '<span class="material-symbols-outlined" style="width:80px;height:50px;display:flex;align-items:center;'
             'justify-content:center;border-radius:6px;background:var(--color-base-800);color:var(--color-base-500)">image</span>'
+        )
+
+    @display(description='No mapa', boolean=True)
+    def no_mapa(self, obj):
+        return obj.tem_coordenadas
+
+    @display(description='Conferir no mapa')
+    def mapa_link(self, obj):
+        if not obj.tem_coordenadas:
+            return 'Sem coordenadas ainda.'
+        return format_html(
+            '<a href="https://www.openstreetmap.org/?mlat={0}&amp;mlon={1}#map=18/{0}/{1}" '
+            'target="_blank" rel="noopener" class="text-primary-600 underline">Abrir no OpenStreetMap ↗</a>',
+            obj.latitude, obj.longitude,
         )
 
     @display(description='Enviado', ordering='data_cadastro')
@@ -153,6 +179,44 @@ class PianoAdmin(ModelAdmin):
         total = queryset.update(aprovado=True)
         self.message_user(request, f'{total} piano(s) aprovado(s).', messages.SUCCESS)
 
+    @action(description='Buscar coordenadas no mapa', icon='location_on')
+    def buscar_coordenadas(self, request, queryset):
+        sem_coordenadas = list(
+            queryset.filter(latitude__isnull=True)[:LIMITE_GEOCODIFICACAO_EM_LOTE]
+        )
+        encontrados, falhas = 0, []
+        for piano in sem_coordenadas:
+            if self._geocodificar(piano):
+                piano.save(update_fields=['latitude', 'longitude'])
+                encontrados += 1
+            else:
+                falhas.append(piano.nome_local)
+
+        if encontrados:
+            self.message_user(request, f'Coordenadas encontradas para {encontrados} piano(s).', messages.SUCCESS)
+        if falhas:
+            self.message_user(
+                request,
+                'Não encontrei o endereço de: ' + ', '.join(falhas) + '. Preencha latitude e longitude manualmente.',
+                messages.WARNING,
+            )
+        restantes = queryset.filter(latitude__isnull=True).count() - len(falhas)
+        if restantes > 0:
+            self.message_user(
+                request,
+                f'Ainda faltam {restantes}. Rode a ação de novo (são buscados {LIMITE_GEOCODIFICACAO_EM_LOTE} por vez).',
+                messages.INFO,
+            )
+        if not sem_coordenadas:
+            self.message_user(request, 'Todos os pianos selecionados já têm coordenadas.')
+
+    def _geocodificar(self, piano):
+        coordenadas = geocodificar(piano)
+        if coordenadas:
+            piano.latitude, piano.longitude = coordenadas
+            return True
+        return False
+
     @action(description='Voltar para pendente', icon='pause_circle')
     def reprovar_pianos(self, request, queryset):
         total = queryset.update(aprovado=False)
@@ -179,7 +243,11 @@ class PianoAdmin(ModelAdmin):
         },
     )
     def aprovar_este(self, request, form, object_id):
-        Piano.objects.filter(pk=object_id).update(aprovado=True)
+        piano = Piano.objects.get(pk=object_id)
+        piano.aprovado = True
+        if not piano.tem_coordenadas:
+            self._geocodificar(piano)
+        piano.save(update_fields=['aprovado', 'latitude', 'longitude'])
         self.message_user(request, 'Piano aprovado e publicado no site.', messages.SUCCESS)
         destino = reverse('admin:pianos_piano_change', args=[object_id])
         if request.headers.get('HX-Request'):
@@ -212,6 +280,19 @@ class PianoAdmin(ModelAdmin):
             if not secure_url:
                 raise CloudinaryError('Cloudinary response did not include secure_url.')
             obj.foto_url = secure_url
+
+        # Busca as coordenadas se ainda não existem ou se o endereço mudou,
+        # a menos que quem editou tenha preenchido latitude/longitude à mão.
+        alterados = set(form.changed_data) if form is not None else set()
+        editou_coordenadas = bool(alterados & {'latitude', 'longitude'})
+        precisa_geocodificar = not obj.tem_coordenadas or bool(alterados & CAMPOS_DE_ENDERECO)
+        if precisa_geocodificar and not editou_coordenadas and form is not None:
+            if not self._geocodificar(obj):
+                self.message_user(
+                    request,
+                    'Não encontrei este endereço no mapa. Preencha latitude e longitude na aba Localização.',
+                    messages.WARNING,
+                )
         super().save_model(request, obj, form, change)
 
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):

@@ -19,8 +19,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    {% tailwind_css %}
+    {# CSS de bibliotecas (Leaflet, recorte) antes do site.css, para o tema do site prevalecer. #}
     {% block head %}{% endblock %}
+    {% tailwind_css %}
 </head>
 <body class="flex min-h-dvh flex-col" {% block body_attrs %}{% endblock %}>
 
@@ -29,6 +30,10 @@
         <a href="{% url 'home' %}" class="font-display text-lg font-bold text-ivory">Piano<em class="text-gold">Finder</em></a>
         <div class="flex items-center gap-2 sm:gap-3">
             {% block nav_actions %}
+                <a href="{% url 'mapa' %}" class="inline-flex items-center gap-1.5 rounded-sm px-3 py-2.5 text-xs font-medium tracking-wider text-muted uppercase transition hover:text-gold">
+                    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg>
+                    Mapa
+                </a>
                 <a href="{% url 'adicionar_piano' %}" class="btn-gold px-4 py-2.5 text-xs">
                     <span aria-hidden="true">+</span> Adicionar
                 </a>

@@ -75,6 +75,33 @@ def lista_pianos(request):
     return resposta
 
 
+def mapa_pianos(request):
+    publicados = Piano.objects.filter(aprovado=True)
+    no_mapa = publicados.filter(latitude__isnull=False, longitude__isnull=False).order_by('nome_local')
+    pontos = [
+        {
+            'id': piano.id,
+            'nome': piano.nome_local,
+            'endereco': piano.endereco,
+            'cidade': piano.cidade,
+            'estado': piano.estado,
+            'tipo': piano.get_tipo_display(),
+            'funcionando': piano.esta_funcionando,
+            'lat': float(piano.latitude),
+            'lng': float(piano.longitude),
+            'foto': piano.foto_url or '',
+            'likes': piano.likes,
+            'estrelas': piano.estrelas if piano.total_avaliacoes else None,
+            'url': reverse('detalhe_piano', args=[piano.id]),
+        }
+        for piano in no_mapa
+    ]
+    return render(request, 'pianos/mapa.html', {
+        'pontos': pontos,
+        'fora_do_mapa': publicados.count() - len(pontos),
+    })
+
+
 @ratelimit(key='ip', rate='5/h', method='POST', block=True)
 def adicionar_piano(request):
     if request.method == 'POST':

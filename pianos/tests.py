@@ -1,5 +1,7 @@
 import os
+from decimal import Decimal
 from unittest.mock import ANY, patch
+from urllib.error import URLError
 
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
@@ -15,6 +17,7 @@ from mapapianos.settings import database_config
 from .admin import PianoAdmin
 from .forms_admin import MAX_IMAGE_SIZE, PianoAdminForm
 from .forms import PianoForm
+from .geocoding import geocodificar
 from .models import Comentario, Piano
 
 
@@ -422,6 +425,10 @@ class PianoFormTests(TestCase):
 )
 class AdminTests(TestCase):
     def setUp(self):
+        # Nenhum teste deve chamar o Nominatim de verdade.
+        geocoder = patch('pianos.admin.geocodificar', return_value=(Decimal('-23.5'), Decimal('-46.6')))
+        self.geocodificar = geocoder.start()
+        self.addCleanup(geocoder.stop)
         admin_user = User.objects.create_superuser('admin', 'admin@example.com', 'senha-de-teste')
         self.client.force_login(admin_user)
         self.publicado = Piano.objects.create(
@@ -476,6 +483,106 @@ class AdminTests(TestCase):
         self.client.post(url, {'_form_submitted': 'on'})
         self.pendente.refresh_from_db()
         self.assertTrue(self.pendente.aprovado)
+
+
+    def test_salvar_piano_sem_coordenadas_busca_no_mapa(self):
+        url = reverse('admin:pianos_piano_change', args=[self.pendente.pk])
+        dados = {
+            'nome_local': self.pendente.nome_local, 'endereco': self.pendente.endereco,
+            'cidade': 'São Paulo', 'estado': 'SP', 'tipo': 'armario', 'ordem': 0,
+            'esta_funcionando': 'on',
+            'comentarios-TOTAL_FORMS': 0, 'comentarios-INITIAL_FORMS': 0,
+            'comentarios-MIN_NUM_FORMS': 0, 'comentarios-MAX_NUM_FORMS': 1000,
+        }
+
+        resposta = self.client.post(url, dados)
+
+        self.assertEqual(resposta.status_code, 302, getattr(resposta, 'context', None) and resposta.context['adminform'].form.errors)
+        self.pendente.refresh_from_db()
+        self.assertEqual(self.pendente.latitude, Decimal('-23.5'))
+        self.geocodificar.assert_called_once()
+
+    def test_coordenadas_digitadas_a_mao_nao_sao_sobrescritas(self):
+        url = reverse('admin:pianos_piano_change', args=[self.pendente.pk])
+        dados = {
+            'nome_local': self.pendente.nome_local, 'endereco': 'Novo endereço, 10',
+            'cidade': 'São Paulo', 'estado': 'SP', 'tipo': 'armario', 'ordem': 0,
+            'latitude': '-22.900000', 'longitude': '-43.200000',
+            'comentarios-TOTAL_FORMS': 0, 'comentarios-INITIAL_FORMS': 0,
+            'comentarios-MIN_NUM_FORMS': 0, 'comentarios-MAX_NUM_FORMS': 1000,
+        }
+
+        self.client.post(url, dados)
+
+        self.pendente.refresh_from_db()
+        self.assertEqual(self.pendente.latitude, Decimal('-22.900000'))
+        self.geocodificar.assert_not_called()
+
+    def test_acao_em_lote_busca_coordenadas_que_faltam(self):
+        self.client.post(reverse('admin:pianos_piano_changelist'), {
+            'action': 'buscar_coordenadas',
+            '_selected_action': [self.publicado.pk, self.pendente.pk],
+        })
+
+        self.assertEqual(Piano.objects.filter(latitude__isnull=False).count(), 2)
+        self.assertEqual(self.geocodificar.call_count, 2)
+
+
+@override_settings(DEBUG=True, SECURE_SSL_REDIRECT=False, ALLOWED_HOSTS=['testserver'])
+class MapaTests(TestCase):
+    def test_mapa_mostra_so_pianos_publicados_com_coordenadas(self):
+        Piano.objects.create(
+            nome_local='No mapa', endereco='Rua A, 1', aprovado=True,
+            latitude=Decimal('-23.55'), longitude=Decimal('-46.63'),
+        )
+        Piano.objects.create(nome_local='Sem coordenadas', endereco='Rua B, 2', aprovado=True)
+        Piano.objects.create(
+            nome_local='Pendente', endereco='Rua C, 3', aprovado=False,
+            latitude=Decimal('-22.9'), longitude=Decimal('-43.2'),
+        )
+
+        resposta = self.client.get(reverse('mapa'))
+
+        self.assertEqual(resposta.status_code, 200)
+        pontos = resposta.context['pontos']
+        self.assertEqual([p['nome'] for p in pontos], ['No mapa'])
+        self.assertEqual(pontos[0]['lat'], -23.55)
+        self.assertEqual(resposta.context['fora_do_mapa'], 1)
+        self.assertContains(resposta, 'id="pontos-mapa"')
+        self.assertNotContains(resposta, 'Pendente')
+
+    def test_detalhe_mostra_mapinha_so_com_coordenadas(self):
+        com = Piano.objects.create(
+            nome_local='Com', endereco='Rua A, 1', aprovado=True,
+            latitude=Decimal('-23.55'), longitude=Decimal('-46.63'),
+        )
+        sem = Piano.objects.create(nome_local='Sem', endereco='Rua B, 2', aprovado=True)
+
+        self.assertContains(self.client.get(reverse('detalhe_piano', args=[com.id])), 'id="mapa-piano"')
+        self.assertNotContains(self.client.get(reverse('detalhe_piano', args=[sem.id])), 'id="mapa-piano"')
+
+
+class GeocodingTests(SimpleTestCase):
+    def setUp(self):
+        self.piano = Piano(nome_local='Livraria', endereco='Av. Paulista, 509', cidade='São Paulo', estado='SP')
+
+    @patch('pianos.geocoding._consultar')
+    def test_usa_o_primeiro_resultado_e_arredonda(self, consultar):
+        consultar.return_value = [{'lat': '-23.5678901234', 'lon': '-46.6543210987'}]
+
+        self.assertEqual(geocodificar(self.piano), (Decimal('-23.567890'), Decimal('-46.654321')))
+        self.assertIn('Livraria', consultar.call_args.args[0])
+
+    @patch('pianos.geocoding._consultar')
+    def test_tenta_so_o_endereco_quando_o_nome_nao_e_encontrado(self, consultar):
+        consultar.side_effect = [[], [{'lat': '-23.5', 'lon': '-46.6'}]]
+
+        self.assertEqual(geocodificar(self.piano), (Decimal('-23.500000'), Decimal('-46.600000')))
+        self.assertNotIn('Livraria', consultar.call_args.args[0])
+
+    @patch('pianos.geocoding._consultar', side_effect=URLError('sem rede'))
+    def test_falha_de_rede_devolve_none(self, consultar):
+        self.assertIsNone(geocodificar(self.piano))
 
 
 class DatabaseConfigTests(SimpleTestCase):
