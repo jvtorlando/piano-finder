@@ -3,33 +3,40 @@ from django.contrib import messages
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django_ratelimit.decorators import ratelimit
 from django_ratelimit.exceptions import Ratelimited
 
-from .models import Piano, Comentario
+from .models import ESTADOS, TIPO_PIANO_CHOICES, Comentario, Piano
 from .forms import PianoForm, ComentarioForm
 
-ESTADOS = [
-    ('AC','Acre'), ('AL','Alagoas'), ('AP','Amapá'), ('AM','Amazonas'),
-    ('BA','Bahia'), ('CE','Ceará'), ('DF','Distrito Federal'), ('ES','Espírito Santo'),
-    ('GO','Goiás'), ('MA','Maranhão'), ('MT','Mato Grosso'), ('MS','Mato Grosso do Sul'),
-    ('MG','Minas Gerais'), ('PA','Pará'), ('PB','Paraíba'), ('PR','Paraná'),
-    ('PE','Pernambuco'), ('PI','Piauí'), ('RJ','Rio de Janeiro'), ('RN','Rio Grande do Norte'),
-    ('RS','Rio Grande do Sul'), ('RO','Rondônia'), ('RR','Roraima'), ('SC','Santa Catarina'),
-    ('SP','São Paulo'), ('SE','Sergipe'), ('TO','Tocantins'),
-]
 
-TIPOS = [
-    ('acustico', 'Acústico'),
-    ('cauda', 'Cauda'),
-    ('armario', 'Armário'),
-    ('digital', 'Digital'),
-    ('hibrido', 'Híbrido'),
-]
+def _filtros_aplicados(request, estado, cidade, tipo):
+    """Rótulos dos filtros ativos, cada um com a URL da lista sem aquele filtro."""
+    nomes_tipos = dict(TIPO_PIANO_CHOICES)
+    nomes_estados = dict(ESTADOS)
+    filtros = []
+    for chave, valor, rotulo in (
+        ('tipo', tipo, nomes_tipos.get(tipo, tipo)),
+        ('cidade', cidade, cidade),
+        ('estado', estado, nomes_estados.get(estado, estado)),
+    ):
+        if not valor:
+            continue
+        params = request.GET.copy()
+        params.pop(chave, None)
+        consulta = params.urlencode()
+        filtros.append({
+            'rotulo': rotulo,
+            'remover_url': reverse('home') + (f'?{consulta}' if consulta else ''),
+        })
+    return filtros
+
 
 def lista_pianos(request):
-    pianos = Piano.objects.filter(aprovado=True).order_by('ordem', '-likes', '-data_cadastro')
+    publicados = Piano.objects.filter(aprovado=True)
+    pianos = publicados.order_by('ordem', '-likes', '-data_cadastro')
 
     estado = request.GET.get('estado', '').strip().upper()
     cidade = request.GET.get('cidade', '').strip()
@@ -47,11 +54,14 @@ def lista_pianos(request):
     return render(request, 'pianos/lista.html', {
         'pianos': pianos,
         'estados': ESTADOS,
-        'tipos': TIPOS,
+        'tipos': TIPO_PIANO_CHOICES,
         'estado_sel': estado,
         'cidade_sel': cidade,
         'tipo_sel': tipo,
         'filtros_ativos': filtros_ativos,
+        'filtros_aplicados': _filtros_aplicados(request, estado, cidade, tipo),
+        'total_publicados': publicados.count(),
+        'total_cidades': publicados.values('cidade', 'estado').distinct().count(),
     })
 
 
@@ -69,8 +79,15 @@ def adicionar_piano(request):
             return redirect('home')
     else:
         form = PianoForm()
+
+    # O formulário escolhe o tipo em duas etapas: categoria e, se acústico, armário ou cauda.
+    tipo_atual = form['tipo'].value() or ''
     return render(request, 'pianos/adicionar.html', {
         'form': form,
+        'tipos_categoria': [('acustico', 'Acústico'), ('digital', 'Digital'), ('hibrido', 'Híbrido')],
+        'tipos_acustico': [('armario', 'Armário'), ('cauda', 'Cauda')],
+        'categoria_inicial': tipo_atual if tipo_atual in {'digital', 'hibrido'} else 'acustico',
+        'subtipo_inicial': 'cauda' if tipo_atual == 'cauda' else 'armario',
         'cloudinary_cloud_name': settings.CLOUDINARY_STORAGE.get('CLOUD_NAME', ''),
         'cloudinary_upload_preset': settings.CLOUDINARY_UPLOAD_PRESET,
     })

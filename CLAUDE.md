@@ -32,6 +32,13 @@ python manage.py test
 python manage.py test pianos.tests.PianoFinderTests.test_like_alterna_sem_ficar_negativo   # um teste só
 ```
 
+CSS (depois de mexer em classes Tailwind):
+
+```powershell
+python manage.py tailwind build   # gera static/css/site.css (commitar)
+python manage.py tailwind watch   # recompila ao salvar
+```
+
 Não há linter nem formatter configurado.
 
 ## Arquitetura
@@ -53,9 +60,11 @@ Para ter dados no banco local, rode `python manage.py carregar_exemplos`, que s�
 
 **Rate limit:** `django-ratelimit` por IP em todas as views que recebem POST, com cache `LocMemCache`. Na Vercel isso não é compartilhado entre instâncias (limitação conhecida, listada no README). `Ratelimited` vira uma resposta 429 pelo `handler403` (`views.permission_denied`, template `403.html`).
 
-**Templates:** cada template em `pianos/templates/pianos/` é uma página HTML completa e independente, com CSS e JS embutidos (não há `base.html`). Mudanças visuais comuns (fontes, cores, cabeçalho) precisam ser repetidas em cada arquivo. O único CSS/JS compartilhado é o do cropper em `pianos/static/pianos/`.
+**Templates e CSS:** todas as páginas públicas estendem `pianos/templates/pianos/base.html`, que contém `<head>`, metatags de compartilhamento (blocos `og_*`), menu (bloco `nav_actions`), mensagens e rodapé. O CSS é **Tailwind v4** via `django-tailwind-cli`: a fonte é `assets/tailwind.css`, com os tokens de cor e fonte em `@theme` (`ink`, `ebony`, `ivory`, `gold`, `muted`…) e componentes como `.btn-gold`, `.chip`, `.field-input` e `.eyebrow`. A saída é `static/css/site.css`, **commitada**, porque a Vercel não roda o binário do Tailwind. Sempre que mudar classes em templates, JS ou `forms.py`, rode `python manage.py tailwind build`, ou `tailwind watch` enquanto edita, e commite o `site.css`. O Tailwind só procura classes nos caminhos `@source` de `assets/tailwind.css`, então classes montadas por concatenação de strings não são detectadas.
 
-**Listas duplicadas:** UFs e tipos de piano estão definidos em mais de um lugar: `TIPO_PIANO_CHOICES` em `models.py`, `ESTADOS`/`TIPOS` em `views.py` (para os filtros) e o conjunto de UFs em `PianoForm.clean_estado`. Altere todos juntos.
+Os pedaços reaproveitados usam *template partials* do Django 6: `{% partialdef nome %}` / `{% partial nome %}`. Por exemplo, o card do piano e o bloco `resultados` em `lista.html`. O ícone de cada tipo de piano é `partials/tipo_icone.html`. O JavaScript fica em `pianos/static/pianos/js/`: `site.js` cuida de diálogos, carrossel e animações de entrada (`data-reveal`) e expõe `PianoFinder.init(root)` para reaplicar tudo após trocas de HTML; `detalhe.js` cuida de curtir, avaliar e compartilhar; `adicionar.js`, do recorte e do upload.
+
+**Listas de domínio:** UFs (`ESTADOS`, `UFS`) e tipos (`TIPO_PIANO_CHOICES`) ficam só em `pianos/models.py`. Views, formulário e filtros importam de lá.
 
 **Migrations de dados:** a `0011` importa os pianos iniciais para a produção e só roda com `VERCEL_ENV=production`. A `0012` limpa esses dados. Elas não fazem nada localmente, então o banco local começa vazio. Use `carregar_exemplos` e `createsuperuser`.
 

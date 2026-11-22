@@ -1,767 +1,200 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends "pianos/base.html" %}
 {% load static %}
-<head>
-    <meta name="description" content="Encontre pianos públicos para tocar em todo o Brasil. Cultura e música ao alcance de todos.">
-    <meta property="og:title" content="Piano Finder — Pianos Públicos no Brasil">
-    <meta property="og:description" content="Encontre pianos públicos para tocar em todo o Brasil.">
-    <meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.png' %}">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
-    <meta property="og:type" content="website">
-    <meta name="twitter:card" content="summary">
-    <meta charset="UTF-8">
-    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piano Finder — Pianos Públicos no Brasil</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --black: #0d0d0d; --ebony: #1a1a1a; --ivory: #f5f0e8;
-            --gold: #c9a84c; --gold-lt: #e8c96a; --muted: #888;
-        }
-        html { scroll-behavior: smooth; overflow-x: hidden; }
-        body {
-            background-color: var(--black);
-            overflow-x: hidden;
-            min-height: 100vh; overflow-x: hidden;
-        }
 
-        /* ── NAV MOBILE ── */
-        .mobile-nav {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.9rem 1.2rem;
-            background: rgba(13,13,13,0.95); backdrop-filter: blur(12px);
-            border-bottom: 1px solid #1e1e1e;
-            position: sticky; top: 0; z-index: 100;
-        }
-        .mobile-nav .brand {
-            font-family: 'Playfair Display', serif; font-size: 1.1rem;
-            font-weight: 700; color: var(--ivory); text-decoration: none;
-        }
-        .mobile-nav .brand em { color: var(--gold); font-style: italic; }
-        .mobile-nav-right { display: flex; align-items: center; gap: 0.6rem; }
-        .mobile-nav .btn-add-nav {
-            display: flex; align-items: center; gap: 0.4rem;
-            background: var(--gold); color: var(--black);
-            font-family: 'DM Sans', sans-serif; font-size: 0.75rem;
-            font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase;
-            padding: 0.55rem 1rem; border-radius: 2px; text-decoration: none;
-        }
+{% block content %}
 
-        /* ── HERO HEADER ── */
-        .hero-header {
-            text-align: center; padding: 2rem 1.2rem 1.5rem;
-            border-bottom: 1px solid #1a1a1a;
-        }
-        .keys-strip {
-            display: flex; justify-content: center; gap: 3px;
-            margin-bottom: 1.5rem; overflow: hidden;
-            animation: fadeDown 0.8s ease both;
-        }
-        .key {
-            width: 22px; height: 70px; background: var(--ivory);
-            border-radius: 0 0 5px 5px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            flex-shrink: 0;
-        }
-        .key.black {
-            width: 14px; height: 44px; background: var(--ebony);
-            border: 1px solid #333; margin: 0 -8px; z-index: 2;
-            border-radius: 0 0 3px 3px;
-        }
-        .eyebrow { font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
-        .hero-header h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2.4rem, 9vw, 6.5rem); font-weight: 900;
-            line-height: 0.95; color: var(--ivory);
-        }
-        .hero-header h1 em { font-style: italic; color: var(--gold); }
-        .subtitle { margin-top: 0.8rem; font-size: 0.82rem; color: var(--muted); }
-        .header-line { width: 40px; height: 1px; background: var(--gold); margin: 1.2rem auto 0; }
-        .alert-success {
-            background: rgba(58,125,68,0.15); border: 1px solid rgba(58,125,68,0.4);
-            color: #7fc987; padding: 0.8rem 1.2rem; border-radius: 4px;
-            margin: 1rem 0 0; font-size: 0.85rem;
-        }
-        .btn-add-desktop { display: none; }
+{# ── Topo ─────────────────────────────────────────────────────────────── #}
+<header class="relative overflow-hidden border-b border-line/60 px-4 pt-10 pb-12 text-center sm:pt-14 sm:pb-16">
+    <div class="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(ellipse_at_top,rgba(201,168,76,0.14),transparent_65%)]" aria-hidden="true"></div>
 
-        /* ── FEED LABEL BAR ── */
-        .feed-label-bar {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.8rem 1.2rem; border-bottom: 1px solid #1a1a1a;
-        }
-        .feed-label-left { display: flex; align-items: center; gap: 0.8rem; }
-        .feed-label { font-size: 0.6rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--muted); }
-        .feed-count { font-size: 0.65rem; color: #444; }
-
-        /* ── BOTÃO FILTRO ── */
-        .btn-filter {
-            display: flex; align-items: center; gap: 0.4rem;
-            padding: 0.35rem 0.8rem; border-radius: 2px;
-            border: 1px solid #2a2a2a; background: transparent;
-            color: var(--muted); cursor: pointer; font-family: 'DM Sans', sans-serif;
-            font-size: 0.65rem; letter-spacing: 0.06em; text-transform: uppercase;
-            transition: border-color 0.15s, color 0.15s;
-            position: relative; flex-shrink: 0;
-        }
-        .btn-filter:hover { border-color: var(--gold); color: var(--gold); }
-        .btn-filter.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.08); }
-        .btn-filter svg { width: 12px; height: 12px; }
-        .filter-dot {
-            position: absolute; top: -3px; right: -3px;
-            width: 7px; height: 7px; border-radius: 50%;
-            background: var(--gold); border: 2px solid var(--black); display: none;
-        }
-        .btn-filter.has-filter .filter-dot { display: block; }
-
-        /* ── POPUP FILTRO ── */
-        .filter-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-            z-index: 300; opacity: 0; pointer-events: none; transition: opacity 0.2s;
-        }
-        .filter-overlay.open { opacity: 1; pointer-events: all; }
-        .filter-popup {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: #0f0f0f; border-top: 1px solid #222;
-            border-radius: 16px 16px 0 0; z-index: 301;
-            padding: 1.2rem 1.2rem 2.5rem;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-            max-height: 70vh; overflow-y: auto;
-        }
-        .filter-popup.open { transform: translateY(0); }
-        .popup-handle { width: 32px; height: 3px; background: #2a2a2a; border-radius: 2px; margin: 0 auto 1.2rem; }
-        .popup-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
-        .popup-title { font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); }
-        .popup-close { background: none; border: none; color: var(--muted); font-size: 1rem; cursor: pointer; padding: 0.2rem; line-height: 1; }
-        .popup-close:hover { color: var(--ivory); }
-        .filter-section { margin-bottom: 1.2rem; }
-        .filter-section-title { font-size: 0.52rem; letter-spacing: 0.25em; text-transform: uppercase; color: #444; margin-bottom: 0.6rem; }
-        .filter-input {
-            width: 100%; background: #1a1a1a; border: 1px solid #2a2a2a;
-            border-radius: 4px; color: var(--ivory); padding: 0.75rem 1rem;
-            font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
-            outline: none; transition: border-color 0.2s;
-        }
-        .filter-input:focus { border-color: var(--gold); }
-        .filter-input::placeholder { color: #333; }
-        .btn-estado-escolher {
-            width: 100%; padding: 0.75rem 1rem;
-            background: #1a1a1a; border: 1px solid #2a2a2a;
-            border-radius: 4px; color: var(--muted);
-            font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
-            text-align: left; cursor: pointer;
-            display: flex; align-items: center; justify-content: space-between;
-        }
-        .btn-estado-escolher:hover { border-color: var(--gold); }
-        .btn-estado-escolher.selected { color: var(--ivory); border-color: var(--gold); }
-        .estados-grid { display: none; flex-wrap: wrap; gap: 5px; margin-top: 0.6rem; }
-        .estados-grid.open { display: flex; }
-        .popup-pills { display: flex; flex-wrap: wrap; gap: 5px; }
-        .ppill {
-            display: flex; align-items: center; gap: 5px;
-            font-size: 0.6rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;
-            padding: 0.4rem 0.75rem; border-radius: 2px;
-            border: 1px solid #2a2a2a; color: var(--muted);
-            background: transparent; cursor: pointer;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .ppill svg { width: 11px; height: 11px; fill: var(--muted); flex-shrink: 0; }
-        .ppill:hover { border-color: var(--gold); color: var(--gold); }
-        .ppill:hover svg { fill: var(--gold); }
-        .ppill.sel { background: rgba(201,168,76,0.12); color: var(--gold); border-color: var(--gold); }
-        .ppill.sel svg { fill: var(--gold); }
-        .epill {
-            font-size: 0.62rem; font-weight: 500; padding: 0.3rem 0.6rem; border-radius: 2px;
-            border: 1px solid #2a2a2a; color: var(--muted); background: transparent; cursor: pointer;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .epill:hover { border-color: var(--gold); color: var(--gold); }
-        .epill.sel { background: rgba(201,168,76,0.12); color: var(--gold); border-color: var(--gold); }
-        .popup-actions { display: flex; gap: 0.8rem; margin-top: 1.2rem; }
-        .btn-aplicar {
-            flex: 1; background: var(--gold); color: var(--black); border: none;
-            padding: 0.85rem; font-family: 'DM Sans', sans-serif;
-            font-size: 0.82rem; font-weight: 500; letter-spacing: 0.08em;
-            text-transform: uppercase; border-radius: 4px; cursor: pointer;
-        }
-        .btn-limpar {
-            padding: 0.85rem 1.2rem; background: transparent;
-            border: 1px solid #2a2a2a; color: var(--muted);
-            font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
-            border-radius: 4px; cursor: pointer; text-decoration: none;
-            display: flex; align-items: center;
-        }
-        .btn-limpar:hover { color: var(--ivory); }
-
-        /* ── FEED ── */
-        .feed { display: flex; flex-direction: column; gap: 0; }
-        .card {
-            background: var(--ebony); position: relative; overflow: hidden;
-            text-decoration: none; color: inherit; display: block;
-            border-bottom: 1px solid #111; animation: fadeUp 0.4s ease both;
-        }
-        .card:active { opacity: 0.85; }
-        .card-img-wrap {
-            width: 100%;
-            height: 56vw;
-            min-height: 200px;
-            max-height: 280px;
-            overflow: hidden; background: #111; position: relative;
-        }
-        .carousel-track { display: flex; height: 100%; transition: transform 0.35s ease; will-change: transform; }
-        .carousel-slide { min-width: 100%; height: 100%; flex-shrink: 0; }
-        .card-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.88); display: block; }
-        .card-no-img {
-            width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-            background: repeating-linear-gradient(90deg, #111 0px, #111 18px, #0a0a0a 18px, #0a0a0a 20px);
-        }
-        .card-no-img span { font-family: 'Playfair Display', serif; font-size: 3rem; opacity: 0.1; }
-        .card-img-wrap::after {
-            content: ''; position: absolute; inset: 0;
-            background: linear-gradient(to bottom, transparent 40%, rgba(13,13,13,0.85) 100%);
-            pointer-events: none; z-index: 1;
-        }
-        .card-over {
-            position: absolute; bottom: 0; left: 0; right: 0;
-            padding: 0.8rem 1rem; z-index: 2;
-        }
-        .card-over-title {
-            font-family: 'Playfair Display', serif; font-size: 1.15rem;
-            font-weight: 700; color: var(--ivory); line-height: 1.2; margin-bottom: 0.2rem;
-        }
-        .card-over-addr { font-size: 0.72rem; color: rgba(245,240,232,0.6); }
-        .destaque-badge {
-            position: absolute; top: 10px; right: 10px; z-index: 10;
-            background: var(--gold); color: var(--black);
-            font-size: 0.48rem; font-weight: 700; letter-spacing: 0.15em;
-            text-transform: uppercase; padding: 3px 7px; border-radius: 2px;
-            display: flex; align-items: center; gap: 3px;
-        }
-        .destaque-badge svg { width: 9px; height: 9px; fill: var(--black); }
-        .tipo-badge {
-            position: absolute; top: 10px; left: 10px; z-index: 10;
-            background: rgba(13,13,13,0.8); backdrop-filter: blur(6px);
-            border: 1px solid rgba(201,168,76,0.5);
-            border-radius: 3px; padding: 4px 8px;
-            display: flex; align-items: center; gap: 5px;
-        }
-        .tipo-badge svg { width: 13px; height: 13px; fill: var(--gold); flex-shrink: 0; }
-        .tipo-badge span { font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); font-weight: 500; }
-        .carousel-dots { position: absolute; bottom: 10px; right: 10px; display: flex; gap: 4px; z-index: 10; pointer-events: none; }
-        .carousel-dot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: background 0.2s, transform 0.2s; }
-        .carousel-dot.active { background: var(--gold); transform: scale(1.3); }
-
-        /* ── CARD BODY ── */
-        .card-body {
-            padding: 0.7rem 1rem 0.85rem;
-            display: flex; align-items: center; justify-content: space-between; gap: 0.8rem;
-        }
-        .card-body-left { flex: 1; min-width: 0; }
-        .card-estado { font-size: 0.52rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); }
-        .card-body-right { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
-        .card-likes { display: flex; align-items: center; gap: 3px; font-size: 0.65rem; color: var(--muted); }
-        .card-likes svg { width: 12px; height: 12px; fill: none; stroke: var(--muted); stroke-width: 2; }
-        .badge { font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.25rem 0.6rem; border-radius: 2px; font-weight: 500; }
-        .badge-ok  { background: rgba(58,125,68,0.2);  color: #7fc987; border: 1px solid rgba(58,125,68,0.3); }
-        .badge-off { background: rgba(185,64,64,0.2);  color: #e08080; border: 1px solid rgba(185,64,64,0.3); }
-        .empty { text-align: center; padding: 5rem 2rem; color: var(--muted); }
-        .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; }
-        .empty p { font-family: 'Playfair Display', serif; font-style: italic; font-size: 1rem; }
-        .fab {
-            display: flex; position: fixed; bottom: 1.5rem; right: 1.2rem; z-index: 200;
-            background: var(--gold); color: var(--black);
-            width: 56px; height: 56px; border-radius: 50%;
-            align-items: center; justify-content: center;
-            font-size: 1.6rem; text-decoration: none;
-            box-shadow: 0 4px 20px rgba(201,168,76,0.4); transition: transform 0.2s;
-        }
-        .fab:active { transform: scale(0.93); }
-        footer { border-top: 1px solid #1a1a1a; padding: 2rem 1rem 5rem; text-align: center; font-size: 0.7rem; color: #2a2a2a; letter-spacing: 0.05em; }
-
-        @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeUp   { from { opacity: 0; transform: translateY(16px);  } to { opacity: 1; transform: translateY(0); } }
-        .card:nth-child(1) { animation-delay: 0.04s; }
-        .card:nth-child(2) { animation-delay: 0.08s; }
-        .card:nth-child(3) { animation-delay: 0.12s; }
-        .card:nth-child(4) { animation-delay: 0.16s; }
-        .card:nth-child(5) { animation-delay: 0.20s; }
-        .card:nth-child(6) { animation-delay: 0.24s; }
-
-        /* ── DESKTOP ── */
-        @media (min-width: 600px) {
-            .mobile-nav { display: none; }
-            .fab { display: none; }
-            .btn-add-desktop {
-                display: inline-flex; align-items: center; gap: 0.6rem;
-                background: var(--gold); color: var(--black);
-                font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
-                font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;
-                padding: 0.9rem 2rem; border-radius: 2px; text-decoration: none;
-                transition: background 0.2s; margin-top: 1.5rem;
-            }
-            .btn-add-desktop:hover { background: var(--gold-lt); }
-            .feed-label-bar { padding: 1rem 2rem; max-width: 1280px; margin: 0 auto; }
-            .feed {
-                display: grid; grid-template-columns: repeat(2, 1fr);
-                gap: 2px; padding: 0 0 4rem; max-width: 1280px; margin: 0 auto;
-            }
-            .card { border-bottom: none; }
-            .card:hover .card-img { transform: scale(1.04); }
-            .card-img { transition: transform 0.5s ease; }
-            .card-img-wrap { height: 240px; max-height: unset; }
-            .card-body { padding: 1rem 1.2rem 1.2rem; }
-            .filter-popup {
-                bottom: auto; left: 50%; right: auto;
-                transform: translateX(-50%) translateY(20px);
-                border-radius: 8px; border: 1px solid #2a2a2a;
-                width: 380px; max-height: 80vh;
-                opacity: 0; pointer-events: none;
-                transition: opacity 0.2s, transform 0.2s;
-                margin-top: 1rem;
-            }
-            .filter-popup.open { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: all; }
-            .popup-handle { display: none; }
-        }
-        @media (min-width: 960px) {
-            .feed { grid-template-columns: repeat(3, 1fr); }
-            .card-img-wrap { height: 260px; }
-        }
-        /* ── SCROLL ANIMATIONS ── */
-        .card {
-            opacity: 0;
-            transform: translateY(28px);
-            transition: opacity 0.55s ease, transform 0.55s ease;
-        }
-        .card.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* ── PAGE TRANSITION ── */
-        body { transition: opacity 0.25s ease; }
-        body.fade-out { opacity: 0; }
-
-        /* ── NAV SCROLL SHADOW ── */
-        .mobile-nav {
-            transition: box-shadow 0.3s ease, background 0.3s ease;
-        }
-        .mobile-nav.scrolled {
-            box-shadow: 0 4px 24px rgba(0,0,0,0.5);
-            background: rgba(13,13,13,1);
-        }
-
-        /* ── HERO KEYS STAGGER ── */
-        .keys-strip .key {
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: opacity 0.4s ease, transform 0.4s ease;
-        }
-        .keys-strip.visible .key {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* ── FEED LABEL BAR ── */
-        .feed-label-bar {
-            opacity: 0;
-            transform: translateY(10px);
-            transition: opacity 0.4s ease 0.1s, transform 0.4s ease 0.1s;
-        }
-        .feed-label-bar.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-        @media (max-width: 599px) {
-            .card-img-wrap {
-                height: auto;
-                min-height: 0;
-                max-height: none;
-                aspect-ratio: 16 / 10;
-                background: #0d0d0d;
-            }
-            .carousel-slide {
-                position: relative;
-                display: block;
-                overflow: hidden;
-            }
-            .card-img {
-                position: absolute;
-                inset: 0;
-                width: 100%;
-                height: 100%;
-                max-width: none;
-                max-height: none;
-                object-fit: cover;
-                object-position: center;
-                flex: none;
-                filter: brightness(0.92);
-            }
-            .card-img-wrap::after {
-                background: linear-gradient(to bottom, transparent 55%, rgba(13,13,13,0.95) 92%);
-            }
-        }
-    </style>
-</head>
-<body>
-
-<!-- NAV MOBILE -->
-<nav class="mobile-nav">
-    <a href="{% url 'home' %}" class="brand">Piano<em>Finder</em></a>
-    <div class="mobile-nav-right">
-        <a href="{% url 'adicionar_piano' %}" class="btn-add-nav">＋ Adicionar</a>
-    </div>
-</nav>
-
-<!-- HEADER -->
-<div class="hero-header">
-    <div class="keys-strip">
-        <div class="key"></div><div class="key black"></div>
-        <div class="key"></div><div class="key black"></div>
-        <div class="key"></div><div class="key"></div>
-        <div class="key black"></div><div class="key"></div>
-        <div class="key black"></div><div class="key"></div>
-        <div class="key black"></div><div class="key"></div>
-    </div>
-    <p class="eyebrow">Cultura · Música · Lazer</p>
-    <h1>Piano<br><em>Finder</em></h1>
-    <p class="subtitle">Descubra pianos públicos para tocar em todo o Brasil.</p>
-    <div class="header-line"></div>
-    <a href="{% url 'adicionar_piano' %}" class="btn-add-desktop">＋ Adicionar um Piano</a>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert-success">🎹 {{ message }}</div>
+    <div class="relative mb-7 flex justify-center gap-[3px]" aria-hidden="true">
+        {% for tecla in "WBWBWWBWBWBW" %}
+            <div class="{% if tecla == 'B' %}key-black{% else %}key-white{% endif %} animate-keys" style="animation-delay: {{ forloop.counter0 }}0ms"></div>
         {% endfor %}
-    {% endif %}
-</div>
-
-<!-- FEED LABEL BAR -->
-<div class="feed-label-bar">
-    <div class="feed-label-left">
-        <span class="feed-label">{% if filtros_ativos %}Resultados{% else %}Pianos disponíveis{% endif %}</span>
-        <button class="btn-filter {% if filtros_ativos %}active has-filter{% endif %}" id="filterBtn" aria-label="Filtrar">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="4" y1="6" x2="20" y2="6"/>
-                <line x1="8" y1="12" x2="16" y2="12"/>
-                <line x1="11" y1="18" x2="13" y2="18"/>
-            </svg>
-            Filtrar
-            <span class="filter-dot"></span>
-        </button>
     </div>
-    <span class="feed-count">{{ pianos|length }} piano{{ pianos|length|pluralize:",s" }}</span>
-</div>
 
-<!-- FEED -->
-<div class="feed">
-    {% for piano in pianos %}
-    {% with fotos=piano.fotos %}
-    <a href="{% url 'detalhe_piano' piano.id %}" class="card">
-        <div class="card-img-wrap">
-            {% if fotos %}
-                <div class="carousel-track" data-track>
-                    {% for foto in fotos %}
-                    <div class="carousel-slide">
-                        <img src="{{ foto }}" alt="{{ piano.nome_local }}" class="card-img" loading="lazy">
-                    </div>
-                    {% endfor %}
-                </div>
-                {% if fotos|length > 1 %}
-                <div class="carousel-dots">
-                    {% for foto in fotos %}
-                    <div class="carousel-dot {% if forloop.first %}active{% endif %}"></div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            {% else %}
-                <div class="card-no-img"><span>♩</span></div>
-            {% endif %}
+    <p class="eyebrow relative">Cultura · Música · Lazer</p>
+    <h1 class="relative mt-3 font-display text-[clamp(2.75rem,10vw,6.5rem)] leading-[0.92] font-black">
+        Piano<br><em class="text-gold">Finder</em>
+    </h1>
+    <p class="relative mx-auto mt-5 max-w-md text-[0.95rem] text-muted">
+        Descubra pianos públicos para tocar em todo o Brasil — e ajude outras pessoas a encontrá-los.
+    </p>
 
-            {% if piano.destaque %}
-            <div class="destaque-badge">
-                <svg viewBox="0 0 16 16"><path d="M8 1l1.8 3.6L14 5.6l-3 2.9.7 4.1L8 10.5l-3.7 2.1.7-4.1-3-2.9 4.2-.6z"/></svg>
-                Destaque
-            </div>
-            {% endif %}
+    {% if total_publicados %}
+    <p class="relative mt-4 text-xs tracking-wide text-faint">
+        <span class="text-ivory">{{ total_publicados }}</span> piano{{ total_publicados|pluralize }}
+        em <span class="text-ivory">{{ total_cidades }}</span> cidade{{ total_cidades|pluralize }}
+    </p>
+    {% endif %}
 
-            {% if piano.tipo %}
-            <div class="tipo-badge">
-                {% if piano.tipo == 'acustico' %}
-                <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="9" rx="1"/><rect x="3" y="11" width="10" height="1.5"/><rect x="3" y="13" width="1.5" height="2" rx="0.3"/><rect x="11.5" y="13" width="1.5" height="2" rx="0.3"/><rect x="3.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="5.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="7.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="9.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/></svg>
-                <span>Acústico</span>
-                {% elif piano.tipo == 'cauda' %}
-                <svg viewBox="0 0 16 16"><path d="M3 2 Q3 1 8 1 Q14 1 14 5 Q14 8 11 10 Q9 11.5 7 11.5 L3 11.5 Z"/><rect x="3" y="11.5" width="8" height="2.5" rx="0.4"/><rect x="4" y="12" width="1" height="1.5" rx="0.2" fill="#0d0d0d"/><rect x="5.8" y="12" width="1" height="1.5" rx="0.2" fill="#0d0d0d"/><rect x="7.6" y="12" width="1" height="1.5" rx="0.2" fill="#0d0d0d"/></svg>
-                <span>Cauda</span>
-                {% elif piano.tipo == 'armario' %}
-                <svg viewBox="0 0 16 16"><rect x="1.5" y="1" width="13" height="11" rx="0.8"/><rect x="2.5" y="2" width="11" height="2.5" rx="0.3" fill="#0d0d0d"/><rect x="3" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="5" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="7" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="9" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="11" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="3" y="12" width="2" height="3" rx="0.4"/><rect x="11" y="12" width="2" height="3" rx="0.4"/></svg>
-                <span>Armário</span>
-                {% elif piano.tipo == 'digital' %}
-                <svg viewBox="0 0 16 16"><rect x="1" y="4" width="14" height="8" rx="1"/><rect x="2" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="4" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="6" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="8" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="10" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="12" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/></svg>
-                <span>Digital</span>
-                {% elif piano.tipo == 'hibrido' %}
-                <svg viewBox="0 0 16 16"><rect x="1" y="6" width="14" height="7" rx="1"/><rect x="2" y="7" width="1.2" height="4" rx="0.2" fill="#0d0d0d"/><rect x="4.2" y="7" width="1.2" height="4" rx="0.2" fill="#0d0d0d"/><rect x="7.5" y="7" width="1.2" height="4" rx="0.2" fill="#0d0d0d"/><rect x="10.5" y="7" width="1.2" height="4" rx="0.2" fill="#0d0d0d"/><polygon points="10,1 8,5 10,5 7.5,9.5 12,4.5 9.5,4.5" fill="#c9a84c"/></svg>
-                <span>Híbrido</span>
-                {% endif %}
-            </div>
-            {% endif %}
+    <div class="relative mt-7 flex flex-wrap items-center justify-center gap-3">
+        <a href="{% url 'adicionar_piano' %}" class="btn-gold">+ Adicionar um piano</a>
+    </div>
+</header>
 
-            <div class="card-over">
-                <p class="card-over-title">{{ piano.nome_local }}</p>
-                <p class="card-over-addr">{{ piano.endereco }}</p>
-            </div>
+{% partialdef resultados inline %}
+<section id="resultados" class="mx-auto max-w-7xl pb-16" aria-live="polite">
+
+    {# ── Barra de filtros ── #}
+    <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
+        <div class="flex flex-wrap items-center gap-2">
+            <h2 class="mr-1 text-[0.62rem] font-medium tracking-[0.3em] text-muted uppercase">
+                {% if filtros_ativos %}Resultados{% else %}Pianos disponíveis{% endif %}
+            </h2>
+            <button type="button" class="chip relative {% if filtros_ativos %}chip-on{% endif %}" data-open-dialog="filtros" aria-haspopup="dialog">
+                <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M8 12h8M11 18h2"/></svg>
+                Filtrar
+            </button>
+            {% for filtro in filtros_aplicados %}
+                <a href="{{ filtro.remover_url }}" class="chip chip-on" aria-label="Remover filtro {{ filtro.rotulo }}">
+                    {{ filtro.rotulo }} <span aria-hidden="true">×</span>
+                </a>
+            {% endfor %}
         </div>
+        <span class="text-xs text-faint">{{ pianos|length }} piano{{ pianos|length|pluralize }}</span>
+    </div>
 
-        <div class="card-body">
-            <div class="card-body-left">
-                <p class="card-estado">{{ piano.cidade }} · {{ piano.estado }}</p>
+    {# ── Cards ── #}
+    <div class="grid gap-px bg-line/40 sm:grid-cols-2 sm:gap-4 sm:bg-transparent sm:px-8 lg:grid-cols-3">
+        {% for piano in pianos %}
+            {% partial card %}
+        {% empty %}
+            <div class="col-span-full bg-ink px-6 py-20 text-center">
+                <p class="text-4xl opacity-30" aria-hidden="true">🎹</p>
+                {% if filtros_ativos %}
+                    <p class="mt-4 font-display text-lg text-muted italic">Nenhum piano encontrado com esses filtros.</p>
+                    <a href="{% url 'home' %}" class="btn-ghost mt-6">Limpar filtros</a>
+                {% else %}
+                    <p class="mt-4 font-display text-lg text-muted italic">Nenhum piano publicado ainda.<br>Seja o primeiro a adicionar!</p>
+                {% endif %}
             </div>
-            <div class="card-body-right">
-                {% if piano.likes > 0 %}
-                <span class="card-likes">
-                    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        {% endfor %}
+    </div>
+</section>
+{% endpartialdef %}
+
+{# ── Card de um piano ─────────────────────────────────────────────────── #}
+{% partialdef card %}
+{% with fotos=piano.fotos %}
+<article class="group relative overflow-hidden bg-ebony sm:rounded-md sm:border sm:border-line/60 sm:transition sm:hover:border-gold/50" data-reveal>
+<a href="{% url 'detalhe_piano' piano.id %}" class="block focus-visible:outline-offset-[-2px]">
+    <div class="relative aspect-[16/10] overflow-hidden bg-coal">
+        {% if fotos %}
+            <div class="flex h-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-carousel>
+                {% for foto in fotos %}
+                    <img src="{{ foto }}" alt="{% if forloop.first %}{{ piano.nome_local }}{% else %}{{ piano.nome_local }} — foto {{ forloop.counter }}{% endif %}"
+                         class="h-full w-full shrink-0 snap-center object-cover brightness-90 transition duration-500 group-hover:scale-[1.03]"
+                         loading="lazy" decoding="async" width="1600" height="1000">
+                {% endfor %}
+            </div>
+            {% if fotos|length > 1 %}
+                <div class="pointer-events-none absolute right-3 bottom-3 z-10 flex gap-1" data-carousel-dots>
+                    {% for foto in fotos %}<span class="size-1.5 rounded-full bg-white/40 transition {% if forloop.first %}scale-125 bg-gold{% endif %}"></span>{% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="flex h-full items-center justify-center bg-[repeating-linear-gradient(90deg,#111_0,#111_18px,#0a0a0a_18px,#0a0a0a_20px)]">
+                <span class="font-display text-5xl opacity-15" aria-hidden="true">♩</span>
+            </div>
+        {% endif %}
+
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent from-45% to-ink/95"></div>
+
+        <span class="absolute top-3 left-3 z-10 inline-flex items-center gap-1.5 rounded-sm border border-gold/50 bg-ink/80 px-2 py-1 text-[0.55rem] font-medium tracking-[0.14em] text-gold uppercase backdrop-blur">
+            {% include "pianos/partials/tipo_icone.html" with tipo=piano.tipo classe="size-3.5" %}
+            {{ piano.get_tipo_display }}
+        </span>
+        {% if piano.destaque %}
+            <span class="absolute top-3 right-3 z-10 inline-flex items-center gap-1 rounded-sm bg-gold px-2 py-1 text-[0.55rem] font-bold tracking-[0.15em] text-ink uppercase">★ Destaque</span>
+        {% endif %}
+
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-4">
+            <h3 class="font-display text-xl leading-tight font-bold text-ivory">
+                {{ piano.nome_local }}
+            </h3>
+            <p class="mt-1 truncate text-xs text-ivory/60">{{ piano.endereco }}</p>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between gap-3 px-4 py-3">
+        <p class="truncate text-[0.6rem] font-medium tracking-[0.22em] text-gold uppercase">{{ piano.cidade }} · {{ piano.estado }}</p>
+        <div class="flex shrink-0 items-center gap-3 text-xs text-muted">
+            {% if piano.total_avaliacoes %}
+                <span title="Nota média"><span class="text-gold">★</span> {{ piano.estrelas|floatformat:1 }}</span>
+            {% endif %}
+            {% if piano.likes %}
+                <span class="inline-flex items-center gap-1" title="Curtidas">
+                    <svg viewBox="0 0 24 24" class="size-3.5" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     {{ piano.likes }}
                 </span>
-                {% endif %}
-                {% if piano.esta_funcionando %}
-                    <span class="badge badge-ok">✓</span>
-                {% else %}
-                    <span class="badge badge-off">✕</span>
-                {% endif %}
-            </div>
+            {% endif %}
+            {% if piano.esta_funcionando %}
+                <span class="rounded-sm border border-ok/30 bg-ok/10 px-2 py-0.5 text-[0.6rem] text-ok" title="Funcionando">✓</span>
+            {% else %}
+                <span class="rounded-sm border border-danger/30 bg-danger/10 px-2 py-0.5 text-[0.6rem] text-danger" title="Em manutenção">✕</span>
+            {% endif %}
         </div>
-    </a>
-    {% endwith %}
-    {% empty %}
-    <div class="empty" style="grid-column:1/-1;">
-        <div class="empty-icon">🎹</div>
-        {% if filtros_ativos %}
-        <p>Nenhum piano encontrado com esses filtros.</p>
-        {% else %}
-        <p>Nenhum piano aprovado ainda.<br>Seja o primeiro a adicionar!</p>
-        {% endif %}
     </div>
-    {% endfor %}
-</div>
+</a>
+</article>
+{% endwith %}
+{% endpartialdef %}
 
+{# ── Filtros (folha inferior no celular, janela no desktop) ───────────── #}
+<dialog id="filtros" class="m-0 mt-auto w-full max-w-none rounded-t-2xl border-t border-line bg-[#0f0f0f] p-0 text-ivory backdrop:bg-black/60 backdrop:backdrop-blur-sm sm:m-auto sm:max-w-md sm:rounded-lg sm:border">
+    <form method="get" action="{% url 'home' %}" class="max-h-[80dvh] overflow-y-auto px-5 pt-4 pb-8 sm:pb-6">
+        <div class="mx-auto mb-5 h-1 w-9 rounded-full bg-line sm:hidden" aria-hidden="true"></div>
+        <div class="mb-5 flex items-center justify-between">
+            <h2 class="text-xs tracking-[0.25em] text-muted uppercase">Filtrar pianos</h2>
+            <button type="button" class="p-1 text-muted hover:text-ivory" data-close-dialog aria-label="Fechar">✕</button>
+        </div>
 
-<a href="{% url 'adicionar_piano' %}" class="fab" aria-label="Adicionar piano">＋</a>
-<footer>Piano Finder — Cultura, Música e Lazer ao alcance de todos · By João Orlando <br>© {% now "Y" %} Piano Finder</footer>
+        <fieldset class="mb-6">
+            <legend class="field-label">Tipo</legend>
+            <div class="flex flex-wrap gap-1.5">
+                <label class="cursor-pointer">
+                    <input type="radio" name="tipo" value="" class="peer sr-only" {% if not tipo_sel %}checked{% endif %}>
+                    <span class="chip peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold">Todos</span>
+                </label>
+                {% for valor, rotulo in tipos %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="tipo" value="{{ valor }}" class="peer sr-only" {% if tipo_sel == valor %}checked{% endif %}>
+                    <span class="chip peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold">
+                        {% include "pianos/partials/tipo_icone.html" with tipo=valor classe="size-3.5" %}
+                        {{ rotulo }}
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </fieldset>
 
-<!-- OVERLAY -->
-<div class="filter-overlay" id="filterOverlay"></div>
+        <div class="mb-6">
+            <label for="filtro-cidade" class="field-label">Cidade</label>
+            <input type="search" id="filtro-cidade" name="cidade" value="{{ cidade_sel }}" placeholder="Ex: São Paulo" class="field-input" autocomplete="off">
+        </div>
 
-<!-- POPUP FILTRO -->
-<div class="filter-popup" id="filterPopup">
-    <div class="popup-handle"></div>
-    <div class="popup-header">
-        <span class="popup-title">Filtrar</span>
-        <button class="popup-close" id="filterClose">✕</button>
-    </div>
-
-    <form method="GET" action="{% url 'home' %}" id="filterForm">
-        <div class="filter-section">
-            <p class="filter-section-title">Estado</p>
-            <button type="button" class="btn-estado-escolher {% if estado_sel %}selected{% endif %}" id="btnEscolherEstado">
-                <span>{% if estado_sel %}{{ estado_sel }}{% else %}Escolher estado{% endif %}</span>
-                <span>▾</span>
-            </button>
-            <div class="estados-grid" id="estadosGrid">
+        <fieldset class="mb-7">
+            <legend class="field-label">Estado</legend>
+            <div class="grid grid-cols-6 gap-1.5 sm:grid-cols-7">
+                <label class="col-span-2 cursor-pointer">
+                    <input type="radio" name="estado" value="" class="peer sr-only" {% if not estado_sel %}checked{% endif %}>
+                    <span class="chip w-full justify-center peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold">Todos</span>
+                </label>
                 {% for uf, nome in estados %}
-                <button type="button" class="epill {% if estado_sel == uf %}sel{% endif %}"
-                        data-group="estado" data-value="{{ uf }}">{{ uf }}</button>
+                <label class="cursor-pointer" title="{{ nome }}">
+                    <input type="radio" name="estado" value="{{ uf }}" class="peer sr-only" {% if estado_sel == uf %}checked{% endif %}>
+                    <span class="chip w-full justify-center px-0 peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold">{{ uf }}</span>
+                </label>
                 {% endfor %}
             </div>
-            <input type="hidden" name="estado" id="estadoInput" value="{{ estado_sel }}">
-        </div>
+        </fieldset>
 
-        <div class="filter-section">
-            <p class="filter-section-title">Cidade</p>
-            <input type="text" name="cidade" class="filter-input"
-                   placeholder="Ex: São Paulo" value="{{ cidade_sel }}" autocomplete="off">
-        </div>
-
-        <div class="filter-section">
-            <p class="filter-section-title">Tipo</p>
-            <div class="popup-pills">
-                {% for val, label in tipos %}
-                <button type="button" class="ppill {% if tipo_sel == val %}sel{% endif %}"
-                        data-group="tipo" data-value="{{ val }}">
-                    {% if val == 'acustico' %}<svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="9" rx="1"/><rect x="3.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="5.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="7.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="9.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/></svg>
-                    {% elif val == 'cauda' %}<svg viewBox="0 0 16 16"><path d="M3 2 Q3 1 8 1 Q14 1 14 5 Q14 8 11 10 Q9 11.5 7 11.5 L3 11.5 Z"/></svg>
-                    {% elif val == 'armario' %}<svg viewBox="0 0 16 16"><rect x="1.5" y="1" width="13" height="11" rx="0.8"/><rect x="2.5" y="2" width="11" height="2.5" rx="0.3" fill="#0d0d0d"/><rect x="3" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="5" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="7" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="9" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="11" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/></svg>
-                    {% elif val == 'digital' %}<svg viewBox="0 0 16 16"><rect x="1" y="4" width="14" height="8" rx="1"/><rect x="2" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="4" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="6" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="8" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="10" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="12" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/></svg>
-                    {% elif val == 'hibrido' %}<svg viewBox="0 0 16 16"><rect x="1" y="6" width="14" height="7" rx="1"/><polygon points="10,1 8,5 10,5 7.5,9.5 12,4.5 9.5,4.5" fill="#c9a84c"/></svg>
-                    {% endif %}
-                    {{ label }}
-                </button>
-                {% endfor %}
-            </div>
-            <input type="hidden" name="tipo" id="tipoInput" value="{{ tipo_sel }}">
-        </div>
-
-        <div class="popup-actions">
-            <button type="submit" class="btn-aplicar">Aplicar</button>
-            <a href="{% url 'home' %}" class="btn-limpar">Limpar</a>
+        <div class="flex gap-3">
+            <button type="submit" class="btn-gold flex-1">Aplicar</button>
+            <a href="{% url 'home' %}" class="btn-ghost">Limpar</a>
         </div>
     </form>
-</div>
+</dialog>
 
-<script>
-const overlay   = document.getElementById('filterOverlay');
-const popup     = document.getElementById('filterPopup');
-const filterBtn = document.getElementById('filterBtn');
-const closeBtn  = document.getElementById('filterClose');
-
-function openFilter() {
-    if (window.innerWidth >= 600) {
-        const rect = filterBtn.getBoundingClientRect();
-        popup.style.top = (rect.bottom + 8) + 'px';
-        popup.style.left = rect.left + 'px';
-        popup.style.transform = 'none';
-    }
-    overlay.classList.add('open');
-    popup.classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-function closeFilter() {
-    overlay.classList.remove('open');
-    popup.classList.remove('open');
-    document.body.style.overflow = '';
-}
-filterBtn.addEventListener('click', openFilter);
-overlay.addEventListener('click', closeFilter);
-closeBtn.addEventListener('click', closeFilter);
-
-document.getElementById('btnEscolherEstado').addEventListener('click', () => {
-    document.getElementById('estadosGrid').classList.toggle('open');
-});
-
-document.querySelectorAll('.ppill, .epill').forEach(pill => {
-    pill.addEventListener('click', () => {
-        const group = pill.dataset.group;
-        const val   = pill.dataset.value;
-        const input = document.getElementById(group + 'Input');
-        const isActive = pill.classList.contains('sel');
-        document.querySelectorAll(`[data-group="${group}"]`).forEach(p => p.classList.remove('sel'));
-        if (!isActive) {
-            pill.classList.add('sel');
-            input.value = val;
-            if (group === 'estado') {
-                const btn = document.getElementById('btnEscolherEstado');
-                btn.querySelector('span').textContent = val;
-                btn.classList.add('selected');
-                document.getElementById('estadosGrid').classList.remove('open');
-            }
-        } else {
-            input.value = '';
-            if (group === 'estado') {
-                const btn = document.getElementById('btnEscolherEstado');
-                btn.querySelector('span').textContent = 'Escolher estado';
-                btn.classList.remove('selected');
-            }
-        }
-    });
-});
-
-document.querySelectorAll('.card-img-wrap').forEach(wrap => {
-    const track = wrap.querySelector('[data-track]');
-    if (!track) return;
-    const slides = track.querySelectorAll('.carousel-slide');
-    if (slides.length <= 1) return;
-    const dots = wrap.querySelectorAll('.carousel-dot');
-    let current = 0;
-    function goTo(idx) {
-        current = (idx + slides.length) % slides.length;
-        track.style.transform = `translateX(-${current * 100}%)`;
-        dots.forEach((d, i) => d.classList.toggle('active', i === current));
-    }
-    let startX = 0;
-    wrap.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
-    wrap.addEventListener('touchend', e => {
-        const diff = startX - e.changedTouches[0].clientX;
-        if (Math.abs(diff) > 30) goTo(current + (diff > 0 ? 1 : -1));
-    });
-    let timer = setInterval(() => goTo(current + 1), 4000);
-    wrap.addEventListener('mouseenter', () => clearInterval(timer));
-    wrap.addEventListener('mouseleave', () => { timer = setInterval(() => goTo(current + 1), 4000); });
-});
-</script>
-<script>
-// ── SCROLL: CARDS ──
-const cardObserver = new IntersectionObserver((entries) => {
-    entries.forEach((entry, i) => {
-        if (entry.isIntersecting) {
-            // pequeno delay escalonado por posição na grid
-            const delay = (entry.target.dataset.idx % 3) * 80;
-            setTimeout(() => entry.target.classList.add('visible'), delay);
-            cardObserver.unobserve(entry.target);
-        }
-    });
-}, { threshold: 0.08 });
-
-document.querySelectorAll('.card').forEach((card, i) => {
-    card.dataset.idx = i;
-    cardObserver.observe(card);
-});
-
-// ── SCROLL: HERO KEYS STAGGER ──
-const keysStrip = document.querySelector('.keys-strip');
-if (keysStrip) {
-    keysStrip.classList.add('visible'); // já visível no topo
-    keysStrip.querySelectorAll('.key').forEach((key, i) => {
-        key.style.transitionDelay = (i * 45) + 'ms';
-    });
-    // força reflow para a transition disparar
-    requestAnimationFrame(() => {
-        keysStrip.querySelectorAll('.key').forEach(key => {
-            key.style.opacity = '1';
-            key.style.transform = 'translateY(0)';
-        });
-    });
-}
-
-// ── SCROLL: FEED LABEL BAR ──
-const labelBar = document.querySelector('.feed-label-bar');
-if (labelBar) {
-    const barObs = new IntersectionObserver(([e]) => {
-        if (e.isIntersecting) { labelBar.classList.add('visible'); barObs.disconnect(); }
-    }, { threshold: 0.1 });
-    barObs.observe(labelBar);
-}
-
-// ── NAV SHADOW NO SCROLL ──
-const mobileNav = document.querySelector('.mobile-nav');
-if (mobileNav) {
-    window.addEventListener('scroll', () => {
-        mobileNav.classList.toggle('scrolled', window.scrollY > 20);
-    }, { passive: true });
-}
-
-// ── PAGE TRANSITION (saída suave) ──
-document.querySelectorAll('a[href]').forEach(link => {
-    if (link.hostname !== location.hostname) return;
-    if (link.getAttribute('href').startsWith('#')) return;
-    if (link.target === '_blank') return;
-    link.addEventListener('click', e => {
-        e.preventDefault();
-        const href = link.href;
-        document.body.classList.add('fade-out');
-        setTimeout(() => window.location.href = href, 230);
-    });
-});
-
-// Entrada suave ao carregar
-document.body.style.opacity = '0';
-window.addEventListener('DOMContentLoaded', () => {
-    requestAnimationFrame(() => {
-        document.body.style.opacity = '';
-    });
-});
-window.addEventListener('pageshow', () => {
-    document.body.classList.remove('fade-out');
-});
-</script>
-</body>
-</html>
+{% endblock %}

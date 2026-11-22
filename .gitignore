@@ -36,3 +36,6 @@ notas.md
 pianos/*.png
 pianos/*.jpg
 pianos/*.jpeg
+
+# Binário do Tailwind baixado pelo django-tailwind-cli
+.django_tailwind_cli/

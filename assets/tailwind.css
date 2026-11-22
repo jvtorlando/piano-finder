@@ -1,0 +1,126 @@
+/*
+ * Fonte do CSS do site. Gere o arquivo final com:
+ *   python manage.py tailwind build      (uma vez)
+ *   python manage.py tailwind watch      (enquanto edita)
+ * O resultado vai para static/css/site.css, que é commitado.
+ */
+@import "tailwindcss" source(none);
+
+@source "../pianos/templates";
+@source "../pianos/static/pianos/js";
+@source "../pianos/forms.py";
+
+@theme {
+    --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Playfair Display", ui-serif, Georgia, serif;
+
+    --color-ink: #0d0d0d;
+    --color-ebony: #161616;
+    --color-coal: #1f1f1f;
+    --color-line: #2a2a2a;
+    --color-ivory: #f5f0e8;
+    --color-muted: #9a958c;
+    --color-faint: #5c5852;
+    --color-gold: #c9a84c;
+    --color-gold-light: #e8c96a;
+    --color-ok: #7fc987;
+    --color-danger: #e08080;
+
+    --animate-fade-up: fade-up 0.5s ease both;
+    --animate-keys: keys 0.5s ease both;
+
+    @keyframes fade-up {
+        from { opacity: 0; transform: translateY(14px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes keys {
+        from { opacity: 0; transform: translateY(-18px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}
+
+@layer base {
+    html {
+        scroll-behavior: smooth;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        @apply bg-ink font-sans font-light text-ivory antialiased;
+    }
+
+    ::selection {
+        @apply bg-gold text-ink;
+    }
+
+    :focus-visible {
+        @apply outline-2 outline-offset-2 outline-gold;
+    }
+}
+
+@layer components {
+    /* Rótulo pequeno em caixa alta, usado acima de títulos e seções. */
+    .eyebrow {
+        @apply text-[0.65rem] font-medium tracking-[0.3em] text-gold uppercase;
+    }
+
+    .btn-gold {
+        @apply inline-flex items-center justify-center gap-2 rounded-sm bg-gold px-6 py-3.5
+            text-sm font-medium tracking-wider text-ink uppercase transition
+            hover:bg-gold-light active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .btn-ghost {
+        @apply inline-flex items-center justify-center gap-2 rounded-sm border border-line px-5 py-3.5
+            text-sm text-muted transition hover:border-ivory hover:text-ivory;
+    }
+
+    .chip {
+        @apply inline-flex cursor-pointer items-center gap-1.5 rounded-sm border border-line px-3 py-1.5
+            text-[0.65rem] font-medium tracking-wider text-muted uppercase transition
+            hover:border-gold hover:text-gold;
+    }
+
+    .chip-on {
+        @apply border-gold bg-gold/10 text-gold;
+    }
+
+    .field-label {
+        @apply mb-2 block text-[0.68rem] font-medium tracking-[0.15em] text-muted uppercase;
+    }
+
+    .field-input {
+        @apply min-h-12 w-full appearance-none rounded-sm border border-line bg-ebony px-4 py-3
+            text-[0.95rem] font-light text-ivory transition outline-none placeholder:text-faint
+            focus:border-gold;
+    }
+
+    .section-title {
+        @apply flex items-center gap-3 text-[0.62rem] font-medium tracking-[0.28em] text-gold uppercase
+            after:h-px after:flex-1 after:bg-line;
+    }
+
+    /* Teclas decorativas do topo. */
+    .key-white {
+        @apply h-16 w-5 shrink-0 rounded-b-[5px] bg-ivory shadow-lg shadow-black/50 sm:h-20 sm:w-6;
+    }
+
+    .key-black {
+        @apply z-10 -mx-2 h-10 w-3.5 shrink-0 rounded-b-[3px] border border-[#333] bg-coal sm:h-12;
+    }
+}
+
+/* Elementos que aparecem suavemente quando entram na tela (pianos/js/site.js). */
+@media (prefers-reduced-motion: no-preference) {
+    [data-reveal] {
+        opacity: 0;
+        transform: translateY(18px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    [data-reveal].is-visible {
+        opacity: 1;
+        transform: none;
+    }
+}

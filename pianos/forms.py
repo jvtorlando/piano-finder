@@ -3,7 +3,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from urllib.parse import urlsplit
 
-from .models import Piano, Comentario
+from .models import UFS, Comentario, Piano
 
 
 class PianoForm(forms.ModelForm):
@@ -33,38 +33,41 @@ class PianoForm(forms.ModelForm):
         ]
         widgets = {
             'nome_local': forms.TextInput(attrs={
+                'class': 'field-input',
                 'autocomplete': 'new-password',
                 'placeholder': 'Ex: Livraria Cultura',
             }),
             'endereco': forms.TextInput(attrs={
+                'class': 'field-input',
                 'autocomplete': 'new-password',
                 'placeholder': 'Ex: Av. Paulista, 2073',
             }),
             'cidade': forms.TextInput(attrs={
+                'class': 'field-input',
                 'autocomplete': 'new-password',
                 'placeholder': 'Ex: São Paulo',
             }),
             'estado': forms.TextInput(attrs={
+                'class': 'field-input uppercase',
                 'autocomplete': 'new-password',
                 'placeholder': 'Ex: SP',
                 'maxlength': '2',
             }),
             'descricao': forms.Textarea(attrs={
                 'rows': 3,
+                'class': 'field-input min-h-28 resize-y',
                 'autocomplete': 'new-password',
                 'placeholder': 'Conte algo sobre este piano — horário de acesso, condições, etc. (opcional)',
             }),
             'tipo': forms.HiddenInput(attrs={'id': 'tipoFinal'}),
+            'esta_funcionando': forms.CheckboxInput(attrs={
+                'class': 'size-5 shrink-0 cursor-pointer accent-gold',
+            }),
         }
 
     def clean_estado(self):
         estado = self.cleaned_data['estado'].strip().upper()
-        estados_validos = {
-            'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
-            'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
-            'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
-        }
-        if estado not in estados_validos:
+        if estado not in UFS:
             raise ValidationError('Informe uma UF brasileira válida, como SP ou RJ.')
         return estado
 

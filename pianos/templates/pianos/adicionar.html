@@ -1,684 +1,153 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    {% load static %}
-    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adicionar Piano — Piano Finder</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'pianos/image-cropper.css' %}">
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --black: #0d0d0d; --ebony: #1a1a1a; --ivory: #f5f0e8;
-            --gold: #c9a84c; --gold-lt: #e8c96a; --muted: #888; --border: #2a2a2a;
-        }
-        body {
-            background-color: var(--black); color: var(--ivory);
-            font-family: 'DM Sans', sans-serif; font-weight: 300;
-            min-height: 100vh; display: flex; flex-direction: column;
-        }
-        nav {
-            position: relative; z-index: 10;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border);
-        }
-        .nav-brand { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: var(--ivory); text-decoration: none; }
-        .nav-brand em { color: var(--gold); font-style: italic; }
-        .nav-back { font-size: 0.8rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
-        .nav-back:hover { color: var(--ivory); }
+{% extends "pianos/base.html" %}
+{% load static %}
 
-        .page-wrap { flex: 1; display: flex; flex-direction: column; }
-        .panel-left { display: none; }
-        .panel-right { padding: 2rem 1.5rem 4rem; display: flex; flex-direction: column; }
+{% block title %}Adicionar piano — Piano Finder{% endblock %}
+{% block description %}Conhece um piano público? Cadastre no Piano Finder para que mais pessoas possam tocar.{% endblock %}
 
-        .form-eyebrow { font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
-        .form-title { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; color: var(--ivory); margin-bottom: 0.4rem; line-height: 1.1; }
-        .form-title em { font-style: italic; color: var(--gold); }
-        .form-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 2rem; }
+{% block head %}
+<link rel="stylesheet" href="{% static 'pianos/image-cropper.css' %}">
+{% endblock %}
 
-        .field { margin-bottom: 1.3rem; }
-        .field label { display: block; font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.45rem; }
-        .field input[type="text"], .field select, .field textarea {
-            width: 100%; background: var(--ebony); border: 1px solid var(--border);
-            border-radius: 2px; color: var(--ivory); padding: 0.85rem 1rem;
-            font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 300;
-            outline: none; transition: border-color 0.2s; appearance: none; min-height: 48px;
-        }
-        .field input[type="text"]:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); }
-        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.3rem; }
-        .field-row .field { margin-bottom: 0; }
-        .form-error-summary {
-            margin-bottom: 1.3rem; padding: 0.9rem 1rem;
-            border: 1px solid rgba(224,128,128,0.45); border-radius: 3px;
-            background: rgba(224,128,128,0.08); color: #efaaaa;
-            font-size: 0.78rem; line-height: 1.5;
-        }
-        .form-error-summary ul { margin: 0.35rem 0 0 1rem; }
-        .upload-error {
-            display: none; margin: 0.5rem 0 0.9rem; color: #efaaaa;
-            font-size: 0.75rem; line-height: 1.4;
-        }
-        .upload-error.visible { display: block; }
+{% block nav_actions %}
+    <a href="{% url 'home' %}" class="text-sm text-muted transition hover:text-ivory">← Voltar</a>
+{% endblock %}
 
-        .section-divider {
-            font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase;
-            color: var(--gold); margin: 1.5rem 0 1rem;
-            display: flex; align-items: center; gap: 0.8rem;
-        }
-        .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+{% block content %}
+<div id="loading-bar" class="fixed top-0 left-0 z-[9999] hidden h-0.5 w-0 bg-gold transition-[width] duration-300"></div>
 
-        .tipo-cat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 0.8rem; }
-        .tipo-cat-option { display: none; }
-        .tipo-cat-label {
-            display: flex; flex-direction: column; align-items: center;
-            gap: 6px; padding: 0.85rem 0.4rem;
-            background: var(--ebony); border: 1px solid var(--border);
-            border-radius: 3px; cursor: pointer;
-            transition: border-color 0.2s, background 0.2s; text-align: center;
-        }
-        .tipo-cat-label svg { width: 22px; height: 22px; fill: var(--muted); transition: fill 0.2s; }
-        .tipo-cat-label span { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); transition: color 0.2s; }
-        .tipo-cat-option:checked + .tipo-cat-label { border-color: var(--gold); background: rgba(201,168,76,0.08); }
-        .tipo-cat-option:checked + .tipo-cat-label svg { fill: var(--gold); }
-        .tipo-cat-option:checked + .tipo-cat-label span { color: var(--gold); }
+<div class="mx-auto grid max-w-7xl md:min-h-[calc(100dvh-57px)] md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
 
-        .tipo-sub-wrap {
-            display: none; background: rgba(201,168,76,0.05);
-            border: 1px solid rgba(201,168,76,0.2); border-radius: 3px;
-            padding: 0.8rem; margin-bottom: 0.8rem;
-        }
-        .tipo-sub-wrap.visible { display: block; }
-        .tipo-sub-label-txt { font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 0.6rem; }
-        .tipo-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .tipo-sub-option { display: none; }
-        .tipo-sub-label {
-            display: flex; flex-direction: column; align-items: center;
-            gap: 6px; padding: 0.8rem 0.4rem;
-            background: var(--ebony); border: 1px solid var(--border);
-            border-radius: 3px; cursor: pointer;
-            transition: border-color 0.2s, background 0.2s; text-align: center;
-        }
-        .tipo-sub-label svg { width: 22px; height: 22px; fill: var(--muted); transition: fill 0.2s; }
-        .tipo-sub-label span { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); transition: color 0.2s; }
-        .tipo-sub-option:checked + .tipo-sub-label { border-color: var(--gold); background: rgba(201,168,76,0.12); }
-        .tipo-sub-option:checked + .tipo-sub-label svg { fill: var(--gold); }
-        .tipo-sub-option:checked + .tipo-sub-label span { color: var(--gold); }
-
-        /* FOTOS */
-        .dropzone {
-            border: 1.5px dashed var(--border); border-radius: 4px;
-            padding: 1.5rem 1rem; text-align: center;
-            cursor: pointer; transition: border-color 0.2s, background 0.2s;
-            position: relative; margin-bottom: 0.8rem;
-        }
-        .dropzone:hover, .dropzone.drag-over { border-color: var(--gold); background: rgba(201,168,76,0.04); }
-        .dropzone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-        .dropzone-icon { font-size: 1.8rem; margin-bottom: 0.5rem; opacity: 0.35; }
-        .dropzone-text { font-size: 0.82rem; color: var(--muted); }
-        .dropzone-text strong { color: var(--gold); font-weight: 500; }
-        .dropzone-sub { font-size: 0.68rem; color: #a4a09a; margin-top: 0.2rem; }
-
-        .btn-escolher-arquivo {
-            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-            width: 100%; padding: 0.75rem; background: var(--ebony);
-            border: 1px solid var(--border); border-radius: 2px;
-            color: var(--muted); font-family: 'DM Sans', sans-serif;
-            font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase;
-            cursor: pointer; transition: border-color 0.2s, color 0.2s;
-            margin-bottom: 0.8rem; position: relative;
-        }
-        .btn-escolher-arquivo:hover { border-color: var(--gold); color: var(--gold); }
-        .btn-escolher-arquivo input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-        .btn-escolher-arquivo svg { width: 14px; height: 14px; flex-shrink: 0; }
-
-        .fotos-preview { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 0.6rem; }
-        .foto-thumb {
-            position: relative; width: clamp(96px, 28vw, 128px); aspect-ratio: 16 / 10;
-            border-radius: 4px; overflow: hidden; border: 1px solid var(--border);
-        }
-        .foto-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .foto-thumb-remove {
-            position: absolute; top: 3px; right: 3px;
-            width: 18px; height: 18px; background: rgba(0,0,0,0.75);
-            border-radius: 50%; border: none; color: #fff;
-            font-size: 0.65rem; cursor: pointer; display: flex;
-            align-items: center; justify-content: center;
-        }
-        .foto-thumb-num { position: absolute; bottom: 3px; left: 4px; font-size: 0.5rem; color: var(--gold); font-weight: 600; }
-        .foto-thumb-spinner {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.55);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.55rem; color: #fff; letter-spacing: 0.04em;
-        }
-
-        .btn-add-foto {
-            display: none; align-items: center; gap: 0.5rem;
-            padding: 0.6rem 1rem; background: transparent;
-            border: 1px dashed var(--border); border-radius: 4px;
-            color: var(--muted); font-family: 'DM Sans', sans-serif;
-            font-size: 0.78rem; cursor: pointer; width: 100%;
-            transition: border-color 0.2s, color 0.2s; margin-top: 0.5rem;
-        }
-        .btn-add-foto:hover { border-color: var(--gold); color: var(--gold); }
-        .btn-add-foto svg { width: 14px; height: 14px; }
-
-        .field-check { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.3rem; }
-        .field-check input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--gold); cursor: pointer; flex-shrink: 0; }
-        .field-check label { font-size: 0.85rem; color: var(--ivory); cursor: pointer; }
-
-        .btn-row { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1.5rem; }
-        .btn-submit {
-            width: 100%; background: var(--gold); color: var(--black); border: none;
-            padding: 1rem; font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
-            font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
-            border-radius: 2px; cursor: pointer; transition: background 0.2s; min-height: 52px;
-        }
-        .btn-submit:hover { background: var(--gold-lt); }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-        .btn-cancel {
-            width: 100%; padding: 1rem; background: transparent;
-            border: 1px solid var(--border); color: var(--muted);
-            font-family: 'DM Sans', sans-serif; font-size: 0.85rem;
-            border-radius: 2px; text-decoration: none;
-            display: flex; align-items: center; justify-content: center; min-height: 52px;
-        }
-        .btn-cancel:hover { border-color: var(--ivory); color: var(--ivory); }
-
-        #loading-bar {
-            position: fixed; top: 0; left: 0; height: 2px;
-            width: 0%; background: var(--gold);
-            transition: width 0.4s ease; z-index: 9999; display: none;
-        }
-        #loading-bar.active { display: block; }
-
-        @media (min-width: 768px) {
-            .page-wrap { flex-direction: row; min-height: calc(100vh - 57px); }
-            .panel-left {
-                display: flex; flex-direction: column;
-                align-items: center; justify-content: center;
-                background: var(--ebony); padding: 4rem 3rem;
-                border-right: 1px solid var(--border);
-                position: relative; overflow: hidden; width: 42%; flex-shrink: 0;
-            }
-            .panel-left::after {
-                content: '♩'; position: absolute; bottom: -1rem; right: -1rem;
-                font-size: 18rem; color: #fff; opacity: 0.015; line-height: 1;
-            }
-            .v-keys { display: flex; gap: 4px; margin-bottom: 3rem; }
-            .vk { width: 30px; height: 120px; background: var(--ivory); border-radius: 0 0 6px 6px; box-shadow: 0 6px 20px rgba(0,0,0,0.5); }
-            .vk.b { width: 20px; height: 76px; background: #111; border: 1px solid #333; margin: 0 -11px; z-index: 2; border-radius: 0 0 4px 4px; }
-            .panel-eyebrow { font-size: 0.65rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; text-align: center; }
-            .panel-title { font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight: 900; line-height: 1; color: var(--ivory); margin-bottom: 1.5rem; text-align: center; }
-            .panel-title em { font-style: italic; color: var(--gold); }
-            .panel-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.7; max-width: 260px; text-align: center; }
-            .panel-divider { width: 40px; height: 1px; background: var(--gold); margin: 1.5rem auto; }
-            .panel-right { padding: 3rem; flex: 1; justify-content: center; overflow-y: auto; }
-            .btn-row { flex-direction: row; }
-            .btn-submit { width: auto; flex: 1; }
-            .btn-cancel { width: auto; }
-        }
-    </style>
-</head>
-<body>
-
-<div id="loading-bar"></div>
-
-<nav>
-    <a href="{% url 'home' %}" class="nav-brand">Piano<em>Finder</em></a>
-    <a href="{% url 'home' %}" class="nav-back">← Voltar</a>
-</nav>
-
-<div class="page-wrap">
-
-    <div class="panel-left">
-        <div class="v-keys">
-            <div class="vk"></div><div class="vk b"></div>
-            <div class="vk"></div><div class="vk b"></div>
-            <div class="vk"></div><div class="vk"></div>
-            <div class="vk b"></div><div class="vk"></div>
+    {# ── Painel lateral (desktop) ── #}
+    <aside class="relative hidden flex-col items-center justify-center overflow-hidden border-r border-line/60 bg-ebony px-12 py-16 text-center md:flex">
+        <span class="pointer-events-none absolute -right-6 -bottom-10 font-display text-[18rem] leading-none text-white/[0.02]" aria-hidden="true">♩</span>
+        <div class="mb-12 flex gap-1" aria-hidden="true">
+            {% for tecla in "WBWBWWBW" %}
+                <div class="{% if tecla == 'B' %}z-10 -mx-3 h-20 w-5 rounded-b border border-[#333] bg-[#111]{% else %}h-32 w-8 rounded-b-md bg-ivory shadow-xl shadow-black/50{% endif %} animate-keys" style="animation-delay: {{ forloop.counter0 }}0ms"></div>
+            {% endfor %}
         </div>
-        <p class="panel-eyebrow">Sua contribuição</p>
-        <h2 class="panel-title">Você<br>conhece<br><em>um piano?</em></h2>
-        <div class="panel-divider"></div>
-        <p class="panel-desc">
-            Cadastre pianos públicos espalhados pelo Brasil
-            para que mais pessoas possam encontrá-los e tocar.
+        <p class="eyebrow">Sua contribuição</p>
+        <h2 class="mt-4 font-display text-[2.6rem] leading-none font-black">Você<br>conhece<br><em class="text-gold">um piano?</em></h2>
+        <div class="mx-auto my-6 h-px w-10 bg-gold"></div>
+        <p class="max-w-[17rem] text-sm leading-relaxed text-muted">
+            Cadastre pianos públicos espalhados pelo Brasil para que mais pessoas possam encontrá-los e tocar.
             Sua sugestão será analisada antes de ser publicada.
         </p>
-    </div>
+    </aside>
 
-    <div class="panel-right">
-        <p class="form-eyebrow">Novo cadastro</p>
-        <h3 class="form-title">Adicionar <em>piano</em></h3>
-        <p class="form-sub">Preencha as informações do local</p>
+    {# ── Formulário ── #}
+    <div class="px-5 pt-8 pb-16 sm:px-10 md:py-14 lg:px-16">
+        <p class="eyebrow">Novo cadastro</p>
+        <h1 class="mt-2 font-display text-3xl font-bold">Adicionar <em class="text-gold">piano</em></h1>
+        <p class="mt-1 mb-8 text-sm text-muted">Preencha as informações do local. Leva menos de um minuto.</p>
 
-        <form method="POST" id="mainForm" autocomplete="off">
+        <form method="post" id="mainForm" autocomplete="off" class="space-y-5">
             {% csrf_token %}
-
             <input type="hidden" id="cloudinary_cloud_name" value="{{ cloudinary_cloud_name }}">
             <input type="hidden" id="cloudinary_preset" value="{{ cloudinary_upload_preset }}">
-
             {{ form.foto_url_1 }}
             {{ form.foto_url_2 }}
             {{ form.foto_url_3 }}
 
             {% if form.errors %}
-            <div class="form-error-summary" role="alert">
-                <strong>Confira os dados informados:</strong>
-                <ul>
-                    {% for field in form %}
-                        {% for error in field.errors %}
-                        <li>{{ field.label }}: {{ error }}</li>
-                        {% endfor %}
-                    {% endfor %}
-                    {% for error in form.non_field_errors %}
-                    <li>{{ error }}</li>
-                    {% endfor %}
+            <div class="rounded border border-danger/45 bg-danger/10 px-4 py-3 text-sm leading-relaxed text-[#efaaaa]" role="alert">
+                <strong class="font-medium">Confira os dados informados:</strong>
+                <ul class="mt-1 ml-4 list-disc">
+                    {% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+                    {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
                 </ul>
             </div>
             {% endif %}
 
-            <div class="field">
-                <label>Nome do local</label>
+            <div>
+                <label for="{{ form.nome_local.id_for_label }}" class="field-label">Nome do local</label>
                 {{ form.nome_local }}
             </div>
-
-            <div class="field">
-                <label>Endereço</label>
+            <div>
+                <label for="{{ form.endereco.id_for_label }}" class="field-label">Endereço</label>
                 {{ form.endereco }}
             </div>
-
-            <div class="field-row">
-                <div class="field">
-                    <label>Cidade</label>
+            <div class="grid grid-cols-[minmax(0,1fr)_6rem] gap-3">
+                <div>
+                    <label for="{{ form.cidade.id_for_label }}" class="field-label">Cidade</label>
                     {{ form.cidade }}
                 </div>
-                <div class="field">
-                    <label>Estado</label>
+                <div>
+                    <label for="{{ form.estado.id_for_label }}" class="field-label">UF</label>
                     {{ form.estado }}
                 </div>
             </div>
 
-            <p class="section-divider">Tipo de piano</p>
-
+            {# ── Tipo ── #}
+            <h2 class="section-title pt-3">Tipo de piano</h2>
             {{ form.tipo }}
-
-            <div class="tipo-cat-grid">
-                <input type="radio" name="tipo_cat" id="cat_acustico" value="acustico" class="tipo-cat-option"
-                       {% if form.tipo.value != 'digital' and form.tipo.value != 'hibrido' %}checked{% endif %}>
-                <label for="cat_acustico" class="tipo-cat-label">
-                    <svg viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="9" rx="1"/><rect x="3" y="11" width="10" height="1.5"/><rect x="3" y="13" width="1.5" height="2" rx="0.3"/><rect x="11.5" y="13" width="1.5" height="2" rx="0.3"/><rect x="3.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="5.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="7.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="9.5" y="3" width="1" height="5" rx="0.2" fill="#0d0d0d"/></svg>
-                    <span>Acústico</span>
+            <div class="grid grid-cols-3 gap-2">
+                {% for valor, rotulo in tipos_categoria %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="tipo_cat" value="{{ valor }}" class="peer sr-only"
+                           {% if valor == categoria_inicial %}checked{% endif %}>
+                    <span class="flex flex-col items-center gap-2 rounded-sm border border-line bg-ebony px-2 py-4 text-muted transition peer-checked:border-gold peer-checked:bg-gold/10 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold hover:border-gold/50">
+                        {% include "pianos/partials/tipo_icone.html" with tipo=valor classe="size-6" %}
+                        <span class="text-[0.6rem] tracking-widest uppercase">{{ rotulo }}</span>
+                    </span>
                 </label>
-
-                <input type="radio" name="tipo_cat" id="cat_digital" value="digital" class="tipo-cat-option"
-                       {% if form.tipo.value == 'digital' %}checked{% endif %}>
-                <label for="cat_digital" class="tipo-cat-label">
-                    <svg viewBox="0 0 16 16"><rect x="1" y="4" width="14" height="8" rx="1"/><rect x="2" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="4" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="6" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="8" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="10" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/><rect x="12" y="5" width="1.2" height="5" rx="0.2" fill="#0d0d0d"/></svg>
-                    <span>Digital</span>
-                </label>
-
-                <input type="radio" name="tipo_cat" id="cat_hibrido" value="hibrido" class="tipo-cat-option"
-                       {% if form.tipo.value == 'hibrido' %}checked{% endif %}>
-                <label for="cat_hibrido" class="tipo-cat-label">
-                    <svg viewBox="0 0 16 16"><rect x="1" y="6" width="14" height="7" rx="1"/><rect x="2" y="7" width="1.2" height="4" rx="0.2" fill="#0d0d0d"/><rect x="4.2" y="7" width="1.2" height="4" rx="0.2" fill="#0d0d0d"/><rect x="7.5" y="7" width="1.2" height="4" rx="0.2" fill="#0d0d0d"/><rect x="10.5" y="7" width="1.2" height="4" rx="0.2" fill="#0d0d0d"/><polygon points="10,1 8,5 10,5 7.5,9.5 12,4.5 9.5,4.5" fill="#c9a84c"/></svg>
-                    <span>Híbrido</span>
-                </label>
+                {% endfor %}
             </div>
-
-            <div class="tipo-sub-wrap" id="subAcustico">
-                <p class="tipo-sub-label-txt">Qual tipo de piano acústico?</p>
-                <div class="tipo-sub-grid">
-                    <input type="radio" name="tipo_sub" id="sub_armario" value="armario" class="tipo-sub-option"
-                           {% if form.tipo.value != 'cauda' %}checked{% endif %}>
-                    <label for="sub_armario" class="tipo-sub-label">
-                        <svg viewBox="0 0 16 16"><rect x="1.5" y="1" width="13" height="11" rx="0.8"/><rect x="2.5" y="2" width="11" height="2.5" rx="0.3" fill="#0d0d0d"/><rect x="3" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="5" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="7" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="9" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="11" y="5.5" width="1" height="5" rx="0.2" fill="#0d0d0d"/><rect x="3" y="12" width="2" height="3" rx="0.4"/><rect x="11" y="12" width="2" height="3" rx="0.4"/></svg>
-                        <span>Armário</span>
+            <div id="subAcustico" class="hidden rounded-sm border border-gold/20 bg-gold/5 p-3">
+                <p class="mb-3 text-[0.58rem] tracking-[0.2em] text-gold uppercase">Qual tipo de piano acústico?</p>
+                <div class="grid grid-cols-2 gap-2">
+                    {% for valor, rotulo in tipos_acustico %}
+                    <label class="cursor-pointer">
+                        <input type="radio" name="tipo_sub" value="{{ valor }}" class="peer sr-only"
+                               {% if valor == subtipo_inicial %}checked{% endif %}>
+                        <span class="flex flex-col items-center gap-2 rounded-sm border border-line bg-ebony px-2 py-3.5 text-muted transition peer-checked:border-gold peer-checked:bg-gold/15 peer-checked:text-gold peer-focus-visible:outline-2 peer-focus-visible:outline-gold hover:border-gold/50">
+                            {% include "pianos/partials/tipo_icone.html" with tipo=valor classe="size-6" %}
+                            <span class="text-[0.6rem] tracking-widest uppercase">{{ rotulo }}</span>
+                        </span>
                     </label>
-
-                    <input type="radio" name="tipo_sub" id="sub_cauda" value="cauda" class="tipo-sub-option"
-                           {% if form.tipo.value == 'cauda' %}checked{% endif %}>
-                    <label for="sub_cauda" class="tipo-sub-label">
-                        <svg viewBox="0 0 16 16"><path d="M3 2 Q3 1 8 1 Q14 1 14 5 Q14 8 11 10 Q9 11.5 7 11.5 L3 11.5 Z"/><rect x="3" y="11.5" width="8" height="2.5" rx="0.4"/><rect x="4" y="12" width="1" height="1.5" rx="0.2" fill="#0d0d0d"/><rect x="5.8" y="12" width="1" height="1.5" rx="0.2" fill="#0d0d0d"/><rect x="7.6" y="12" width="1" height="1.5" rx="0.2" fill="#0d0d0d"/></svg>
-                        <span>Cauda</span>
-                    </label>
+                    {% endfor %}
                 </div>
             </div>
 
-            <p class="section-divider">Fotos</p>
+            {# ── Fotos ── #}
+            <h2 class="section-title pt-3">Fotos <span class="tracking-normal text-faint normal-case">(até 3)</span></h2>
 
-            <!-- Inputs de arquivo ocultos para slots 2 e 3 -->
-            <input type="file" accept="image/*" id="fotoInput2" style="display:none">
-            <input type="file" accept="image/*" id="fotoInput3" style="display:none">
+            <input type="file" accept="image/*" id="fotoInput2" class="hidden">
+            <input type="file" accept="image/*" id="fotoInput3" class="hidden">
 
-            <div class="dropzone" id="dropzone">
-                <input type="file" accept="image/*" id="fotoInput">
-                <div class="dropzone-icon">🎹</div>
-                <p class="dropzone-text"><strong>Solte aqui</strong> ou toque para escolher</p>
-                <p class="dropzone-sub">A foto será ajustada no formato 16:10</p>
+            <div id="dropzone" class="relative rounded border-[1.5px] border-dashed border-line px-4 py-8 text-center transition hover:border-gold hover:bg-gold/5 [&.drag-over]:border-gold [&.drag-over]:bg-gold/5">
+                <input type="file" accept="image/*" id="fotoInput" class="absolute inset-0 size-full cursor-pointer opacity-0" aria-label="Escolher foto do piano">
+                <p class="text-3xl opacity-40" aria-hidden="true">🎹</p>
+                <p class="mt-2 text-sm text-muted"><strong class="font-medium text-gold">Solte aqui</strong> ou toque para escolher</p>
+                <p class="mt-1 text-xs text-[#a4a09a]">A foto será ajustada no formato 16:10</p>
             </div>
 
-            <label class="btn-escolher-arquivo" id="btnEscolherArquivo">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                Escolher arquivo
-                <input type="file" accept="image/*" id="fotoBtnInput">
-            </label>
+            <div id="fotosPreview" class="flex flex-wrap gap-2 empty:hidden"></div>
+            <p id="uploadError" class="hidden text-xs leading-snug text-[#efaaaa]" role="alert"></p>
 
-            <div class="fotos-preview" id="fotosPreview"></div>
-            <p class="upload-error" id="uploadError" role="alert"></p>
-
-            <button type="button" class="btn-add-foto" id="btnAddFoto">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="16"/>
-                    <line x1="8" y1="12" x2="16" y2="12"/>
-                </svg>
+            <button type="button" id="btnAddFoto" class="hidden w-full items-center justify-center gap-2 rounded border border-dashed border-line px-4 py-3 text-sm text-muted transition hover:border-gold hover:text-gold">
+                <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
                 Adicionar mais uma foto
             </button>
 
-            <p class="section-divider">Descrição <span style="color:#444;font-size:0.55rem;letter-spacing:0;text-transform:none">(opcional)</span></p>
-            <div class="field">{{ form.descricao }}</div>
+            {# ── Descrição ── #}
+            <h2 class="section-title pt-3">Descrição <span class="tracking-normal text-faint normal-case">(opcional)</span></h2>
+            {{ form.descricao }}
 
-            <div class="field-check">
+            <label class="flex cursor-pointer items-center gap-3 text-sm">
                 {{ form.esta_funcionando }}
-                <label for="{{ form.esta_funcionando.id_for_label }}">Piano está funcionando</label>
-            </div>
+                O piano está funcionando
+            </label>
 
-            <div class="btn-row">
-                <button type="submit" class="btn-submit" id="btnSubmit">Enviar para aprovação</button>
-                <a href="{% url 'home' %}" class="btn-cancel">Cancelar</a>
+            <div class="flex flex-col gap-3 pt-4 sm:flex-row">
+                <button type="submit" class="btn-gold flex-1" id="btnSubmit">Enviar para aprovação</button>
+                <a href="{% url 'home' %}" class="btn-ghost">Cancelar</a>
             </div>
         </form>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script src="{% static 'pianos/image-cropper.js' %}"></script>
-<script>
-// ── TIPO ──
-const tipoFinal = document.getElementById('tipoFinal');
-const subWrap   = document.getElementById('subAcustico');
-function updateTipo() {
-    const cat = document.querySelector('input[name="tipo_cat"]:checked')?.value;
-    if (cat === 'acustico') {
-        subWrap.classList.add('visible');
-        tipoFinal.value = document.querySelector('input[name="tipo_sub"]:checked')?.value || 'armario';
-    } else {
-        subWrap.classList.remove('visible');
-        tipoFinal.value = cat || 'digital';
-    }
-}
-document.querySelectorAll('input[name="tipo_cat"]').forEach(r => r.addEventListener('change', updateTipo));
-document.querySelectorAll('input[name="tipo_sub"]').forEach(r => r.addEventListener('change', updateTipo));
-updateTipo();
-
-// ── UPLOAD DIRETO CLOUDINARY ──
-const CLOUD = document.getElementById('cloudinary_cloud_name').value;
-const PRESET = document.getElementById('cloudinary_preset').value;
-const urlInputs = [
-    document.getElementById('foto_url_1'),
-    document.getElementById('foto_url_2'),
-    document.getElementById('foto_url_3'),
-];
-const fileInputs = [
-    document.getElementById('fotoInput'),
-    document.getElementById('fotoInput2'),
-    document.getElementById('fotoInput3'),
-];
-const preview     = document.getElementById('fotosPreview');
-const btnAdd      = document.getElementById('btnAddFoto');
-const dropzone    = document.getElementById('dropzone');
-const btnEscolher = document.getElementById('btnEscolherArquivo');
-const btnSubmit   = document.getElementById('btnSubmit');
-const uploadError = document.getElementById('uploadError');
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-let cropPending = 0;
-let cropQueue = Promise.resolve();
-
-// slots: { localUrl, uploading, error, token, controller }
-const slots = [null, null, null];
-
-function showUploadError(message = '') {
-    uploadError.textContent = message;
-    uploadError.classList.toggle('visible', Boolean(message));
-}
-
-function renderPreview() {
-    preview.innerHTML = '';
-    const usados = slots.filter(Boolean).length;
-    const pendentes = slots.filter(s => s && s.uploading).length;
-    const falhas = slots.filter(s => s && s.error).length;
-
-    slots.forEach((s, i) => {
-        if (!s) return;
-        const thumb = document.createElement('div');
-        thumb.className = 'foto-thumb';
-
-        const img = document.createElement('img');
-        img.src = s.localUrl;
-
-        const num = document.createElement('span');
-        num.className = 'foto-thumb-num';
-        num.textContent = '0' + (i + 1);
-
-        const rm = document.createElement('button');
-        rm.className = 'foto-thumb-remove';
-        rm.type = 'button';
-        rm.textContent = '×';
-        rm.setAttribute('aria-label', `Remover foto ${i + 1}`);
-        rm.onclick = () => {
-            if (s.controller) s.controller.abort();
-            URL.revokeObjectURL(s.localUrl);
-            slots[i] = null;
-            urlInputs[i].value = '';
-            if (!slots.some(slot => slot && slot.error)) showUploadError();
-            renderPreview();
-        };
-
-        thumb.append(img, num, rm);
-
-        if (s.uploading) {
-            const sp = document.createElement('div');
-            sp.className = 'foto-thumb-spinner';
-            sp.textContent = 'enviando…';
-            thumb.appendChild(sp);
-        } else if (s.error) {
-            const sp = document.createElement('div');
-            sp.className = 'foto-thumb-spinner';
-            sp.textContent = 'falhou';
-            thumb.appendChild(sp);
-        }
-        preview.appendChild(thumb);
-    });
-
-    btnSubmit.disabled = cropPending > 0 || pendentes > 0 || falhas > 0;
-    if (cropPending > 0) {
-        btnSubmit.textContent = 'Ajustando foto...';
-    } else if (pendentes > 0) {
-        btnSubmit.textContent = `Aguarde... (${pendentes} foto${pendentes > 1 ? 's' : ''})`;
-    } else if (falhas > 0) {
-        btnSubmit.textContent = 'Remova a foto com erro';
-    } else {
-        btnSubmit.textContent = 'Enviar para aprovação';
-    }
-
-    if (usados === 0) {
-        dropzone.style.display = '';
-        btnEscolher.style.display = '';
-        btnAdd.style.display = 'none';
-    } else if (usados < 3) {
-        dropzone.style.display = 'none';
-        btnEscolher.style.display = 'none';
-        btnAdd.style.display = 'flex';
-    } else {
-        dropzone.style.display = 'none';
-        btnEscolher.style.display = 'none';
-        btnAdd.style.display = 'none';
-    }
-}
-
-async function uploadFoto(file, idx) {
-    const token = slots[idx].token;
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 60000);
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('upload_preset', PRESET);
-    slots[idx].uploading = true;
-    slots[idx].controller = controller;
-    renderPreview();
-    try {
-        if (!CLOUD || !PRESET) throw new Error('Configuração de upload indisponível.');
-        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`, {
-            method: 'POST',
-            body: fd,
-            signal: controller.signal,
-        });
-        const data = await res.json();
-        if (!res.ok || !data.secure_url) {
-            throw new Error(data.error?.message || 'O Cloudinary recusou a imagem.');
-        }
-        if (!slots[idx] || slots[idx].token !== token) return;
-        slots[idx].uploading = false;
-        slots[idx].error = false;
-        slots[idx].controller = null;
-        urlInputs[idx].value = data.secure_url;
-    } catch(e) {
-        if (!slots[idx] || slots[idx].token !== token) return;
-        slots[idx].uploading = false;
-        slots[idx].error = true;
-        slots[idx].controller = null;
-        urlInputs[idx].value = '';
-        const reason = e.name === 'AbortError'
-            ? 'o envio demorou mais de 60 segundos'
-            : e.message;
-        showUploadError(`Não foi possível enviar a foto: ${reason}. Remova-a e tente novamente.`);
-        console.error('Erro no upload:', e);
-    } finally {
-        window.clearTimeout(timeoutId);
-    }
-    renderPreview();
-}
-
-function validateImageFile(file) {
-    if (!file || !file.type.startsWith('image/')) {
-        showUploadError('Escolha um arquivo de imagem válido.');
-        return false;
-    }
-    if (file.size > MAX_FILE_SIZE) {
-        showUploadError('Cada foto deve ter no máximo 10 MB.');
-        return false;
-    }
-    return true;
-}
-
-async function addFile(file) {
-    if (!validateImageFile(file)) return;
-    if (!window.PianoImageCropper) {
-        showUploadError('O ajustador de imagem não foi carregado. Atualize a página e tente novamente.');
-        return;
-    }
-    if (slots.findIndex(s => s === null) === -1) return;
-
-    cropPending += 1;
-    renderPreview();
-
-    let croppedFile;
-    try {
-        croppedFile = await window.PianoImageCropper.crop(file, {
-            aspectRatio: 16 / 10,
-            outputWidth: 1600,
-            outputHeight: 1000,
-            quality: 0.9,
-        });
-    } catch (error) {
-        showUploadError(`Não foi possível ajustar a foto: ${error.message}`);
-        console.error('Erro no recorte:', error);
-        return;
-    } finally {
-        cropPending -= 1;
-        renderPreview();
-    }
-
-    if (!croppedFile || !validateImageFile(croppedFile)) return;
-    const idx = slots.findIndex(s => s === null);
-    if (idx === -1) return;
-    if (!slots.some(slot => slot && slot.error)) showUploadError();
-    slots[idx] = {
-        localUrl: URL.createObjectURL(croppedFile),
-        uploading: false,
-        error: false,
-        token: `${Date.now()}-${Math.random()}`,
-        controller: null,
-    };
-    renderPreview();
-    uploadFoto(croppedFile, idx);
-}
-
-function enqueueFile(file) {
-    cropQueue = cropQueue
-        .then(() => addFile(file))
-        .catch(error => {
-            showUploadError(`Não foi possível processar a foto: ${error.message}`);
-            console.error('Erro ao processar fila de imagens:', error);
-        });
-    return cropQueue;
-}
-
-// Eventos
-function handleFileInput() {
-    const file = this.files[0];
-    this.value = '';
-    if (file) enqueueFile(file);
-}
-document.getElementById('fotoInput').addEventListener('change', handleFileInput);
-document.getElementById('fotoBtnInput').addEventListener('change', handleFileInput);
-fileInputs[1].addEventListener('change', handleFileInput);
-fileInputs[2].addEventListener('change', handleFileInput);
-
-btnAdd.addEventListener('click', () => {
-    const idx = slots.findIndex(s => s === null);
-    if (idx >= 0) fileInputs[idx].click();
-});
-
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
-dropzone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropzone.classList.remove('drag-over');
-    [...e.dataTransfer.files]
-        .filter(f => f.type.startsWith('image/'))
-        .slice(0, 3)
-        .forEach(enqueueFile);
-});
-
-// Loading bar no submit
-document.getElementById('mainForm').addEventListener('submit', event => {
-    if (cropPending > 0 || slots.some(slot => slot && (slot.uploading || slot.error))) {
-        event.preventDefault();
-        showUploadError('Conclua o ajuste das fotos, aguarde os uploads ou remova a foto que apresentou erro.');
-        return;
-    }
-    const bar = document.getElementById('loading-bar');
-    bar.classList.add('active');
-    let w = 0;
-    setInterval(() => { w += Math.random() * 15; if (w > 85) w = 85; bar.style.width = w + '%'; }, 300);
-});
-
-// Anti-autocomplete
-document.querySelectorAll('input:not([type=file]):not([type=radio]):not([type=checkbox]):not([type=hidden]), textarea').forEach(el => {
-    el.setAttribute('autocomplete', 'new-password');
-    el.setAttribute('readonly', true);
-    el.addEventListener('focus', () => el.removeAttribute('readonly'));
-});
-</script>
-
-</body>
-</html>
+<script src="{% static 'pianos/js/adicionar.js' %}"></script>
+{% endblock %}

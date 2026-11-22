@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'cloudinary',
     'cloudinary_storage',
     'django_ratelimit',
+    'django_tailwind_cli',
     'pianos',
 ]
 
@@ -118,6 +119,14 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# ── Tailwind ────────────────────────────────────────────────────────────────
+# `python manage.py tailwind build` gera static/css/site.css a partir de
+# assets/tailwind.css. O CSS gerado é commitado, então a Vercel não precisa do
+# binário do Tailwind; rode o build sempre que mudar classes nos templates.
+TAILWIND_CLI_SRC_CSS = 'assets/tailwind.css'
+TAILWIND_CLI_DIST_CSS = 'css/site.css'
+TAILWIND_CLI_VERSION = '4.3.5'
 
 # ── Mídia ───────────────────────────────────────────────────────────────────
 MEDIA_URL = '/media/'

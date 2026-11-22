@@ -1,0 +1,64 @@
+{% load static tailwind_cli %}<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Piano Finder — Pianos Públicos no Brasil{% endblock %}</title>
+    <meta name="description" content="{% block description %}Encontre pianos públicos para tocar em todo o Brasil. Cultura e música ao alcance de todos.{% endblock %}">
+    <meta name="theme-color" content="#0d0d0d">
+
+    <meta property="og:site_name" content="Piano Finder">
+    <meta property="og:title" content="{% block og_title %}Piano Finder — Pianos Públicos no Brasil{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Encontre pianos públicos para tocar em todo o Brasil.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ request.scheme }}://{{ request.get_host }}{% static 'favicon.png' %}{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="{% block twitter_card %}summary{% endblock %}">
+
+    <link rel="icon" type="image/png" href="{% static 'favicon.png' %}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    {% tailwind_css %}
+    {% block head %}{% endblock %}
+</head>
+<body class="flex min-h-dvh flex-col" {% block body_attrs %}{% endblock %}>
+
+<nav class="sticky top-0 z-50 border-b border-line/70 bg-ink/90 backdrop-blur-md transition-shadow" data-nav>
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
+        <a href="{% url 'home' %}" class="font-display text-lg font-bold text-ivory">Piano<em class="text-gold">Finder</em></a>
+        <div class="flex items-center gap-2 sm:gap-3">
+            {% block nav_actions %}
+                <a href="{% url 'adicionar_piano' %}" class="btn-gold px-4 py-2.5 text-xs">
+                    <span aria-hidden="true">+</span> Adicionar
+                </a>
+            {% endblock %}
+        </div>
+    </div>
+</nav>
+
+{% if messages %}
+<div class="pointer-events-none fixed inset-x-0 top-20 z-50 flex flex-col items-center gap-2 px-4" data-toasts>
+    {% for message in messages %}
+    <div role="status" class="pointer-events-auto flex max-w-md animate-fade-up items-start gap-3 rounded border border-ok/40 bg-[#132016]/95 px-4 py-3 text-sm text-ok shadow-xl shadow-black/40 backdrop-blur">
+        <span aria-hidden="true">🎹</span>
+        <span>{{ message }}</span>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<main class="flex-1">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="border-t border-line/60 px-4 pt-10 pb-24 text-center text-xs tracking-wide text-faint sm:pb-10">
+    <p class="font-display text-base text-muted">Piano<em class="text-gold">Finder</em></p>
+    <p class="mt-2">Cultura, música e lazer ao alcance de todos · Por João Orlando</p>
+    <p class="mt-1">© {% now "Y" %} Piano Finder</p>
+</footer>
+
+<script src="{% static 'pianos/js/site.js' %}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

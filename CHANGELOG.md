@@ -9,7 +9,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - redesigned Django Admin with Unfold, using the Piano Finder gold palette, a moderation dashboard with counters and review queues, sidebar shortcuts with pending badges, status labels, photo thumbnails, tabbed piano forms with inline comments, and a one-click "approve and publish" action;
+- public pages rebuilt on a shared `base.html` with Tailwind CSS v4 (via `django-tailwind-cli`), keeping the black, ivory and gold identity: consistent 16:10 cards, native swipe carousels, an accessible filter dialog with removable filter chips, catalog totals, toast messages, and page scripts moved to static files;
 - `carregar_exemplos` management command that seeds sample pianos and comments into the local development database.
+
+### Changed
+
+- Brazilian states and piano types now have a single source of truth in `pianos/models.py`;
+- the "how to get there" link uses an encoded Google Maps search URL.
 
 ### Fixed
 
